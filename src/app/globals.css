@@ -1,26 +1,183 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
+/* eigene Styles */
+html,
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  @apply bg-gray-50 text-gray-900 dark:bg-gray-900 dark:text-gray-50 transition-colors duration-300;
+  font-family: "Montserrat", sans-serif;
+}
+
+/* Grundfarbe des Schalters (Track) */
+/* === Switch-Stile nur für Switch-Komponenten === */
+[role="switch"][data-state="unchecked"] {
+  background-color: rgb(229 231 235) !important; /* gray-200 */
+}
+
+[role="switch"][data-state="checked"] {
+  background-color: rgb(99 102 241) !important; /* indigo-500 */
+}
+
+/* Der kleine Kreis (Thumb) */
+[role="switch"] > span {
+  background-color: white !important;
+  box-shadow: 0 0 2px rgba(0, 0, 0, 0.2);
+}
+
+/* --- Sichtbare Slider-Farben --- */
+
+/* Leiste */
+[data-orientation="horizontal"] .relative.w-full.rounded-full.bg-secondary {
+  background-color: rgb(229 231 235) !important; /* gray-200 */
+}
+
+/* Fortschrittsbalken */
+[data-orientation="horizontal"] .absolute.bg-primary {
+  background-color: rgb(99 102 241) !important; /* indigo-500 */
+}
+
+/* Slider Thumb */
+[data-orientation="horizontal"] .absolute.bg-primary.rounded-full {
+  width: 16px !important;
+  height: 16px !important;
+  border: 2px solid white !important;
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.2);
+}
+
+/* -------------------------------------------- */
+/* 🎨 Dynamische Akzentfarben per data-accent     */
+/* -------------------------------------------- */
+
+/* Standard (Indigo) */
+:root,
+[data-accent="indigo"] {
+  --primary: 99 102 241; /* Indigo-500 */
+  --ring: 99 102 241;
+}
+
+/* Grün */
+[data-accent="emerald"] {
+  --primary: 16 185 129; /* Emerald-500 */
+  --ring: 16 185 129;
+}
+
+/* Rot */
+[data-accent="rose"] {
+  --primary: 244 63 94; /* Rose-500 */
+  --ring: 244 63 94;
+}
+
+/* Gelb */
+[data-accent="amber"] {
+  --primary: 245 158 11; /* Amber-500 */
+  --ring: 245 158 11;
+}
+
+/* ------------------------------ */
+/* 🌈 Hintergrundmuster Varianten */
+/* ------------------------------ */
+
+/* Grund-Setup für Muster */
+/* -------------------------------------------- */
+/* 🌈 Hintergrundmuster-Overlay auf <html>       */
+/* -------------------------------------------- */
+
+html::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.35; /* Sichtbarkeit */
+  background-size: 40px 40px;
+  transition: opacity 0.3s ease;
+}
+
+/* === Muster-Varianten === */
+[data-bgpattern="none"]::before {
+  background-image: none;
+}
+
+[data-bgpattern="grid"]::before {
+  background-image: linear-gradient(
+      to right,
+      rgba(0, 0, 0, 0.05) 1px,
+      transparent 1px
+    ),
+    linear-gradient(to bottom, rgba(0, 0, 0, 0.05) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+[data-bgpattern="dots"]::before {
+  background-image: radial-gradient(rgba(0, 0, 0, 0.08) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+[data-bgpattern="geo"]::before {
+  background-image: repeating-linear-gradient(
+      45deg,
+      rgba(0, 0, 0, 0.05) 0,
+      rgba(0, 0, 0, 0.05) 2px,
+      transparent 2px,
+      transparent 20px
+    ),
+    repeating-linear-gradient(
+      -45deg,
+      rgba(0, 0, 0, 0.05) 0,
+      rgba(0, 0, 0, 0.05) 2px,
+      transparent 2px,
+      transparent 20px
+    );
+  background-size: 40px 40px;
+}
+
+/* === DARK MODE VARIANTEN === */
+.dark[data-bgpattern="grid"]::before {
+  background-image: linear-gradient(
+      to right,
+      rgba(255, 255, 255, 0.08) 1px,
+      transparent 1px
+    ),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.08) 1px, transparent 1px);
+}
+
+.dark[data-bgpattern="dots"]::before {
+  background-image: radial-gradient(
+    rgba(255, 255, 255, 0.12) 1px,
+    transparent 1px
+  );
+}
+
+.dark[data-bgpattern="geo"]::before {
+  background-image: repeating-linear-gradient(
+      45deg,
+      rgba(255, 255, 255, 0.08) 0,
+      rgba(255, 255, 255, 0.08) 2px,
+      transparent 2px,
+      transparent 20px
+    ),
+    repeating-linear-gradient(
+      -45deg,
+      rgba(255, 255, 255, 0.08) 0,
+      rgba(255, 255, 255, 0.08) 2px,
+      transparent 2px,
+      transparent 20px
+    );
+}
+
+/* Alles andere (Sidebar, Inhalt etc.) liegt drüber */
+body,
+body * {
+  position: relative;
+  z-index: 1;
+}
+
+button,
+select,
+input {
+  color: rgb(var(--foreground));
+}
+.recharts-tooltip-wrapper {
+  z-index: 100 !important;
 }

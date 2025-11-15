@@ -1,0 +1,156 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import RelationsGraph from "@/components/RelationsComponents/RelationsGraph";
+import { Link2, Network, GitBranch, ArrowUp, Cable } from "lucide-react";
+import RelationsHeatmap from "@/components/KpiComponents/StructureQuality/RelationsHeatmap";
+import { useAccentColor } from "@/hooks/useAccentColor";
+import { usePageBackground } from "@/hooks/usePageBackground";
+import { useLanguage } from "@/hooks/useLanguage";
+import { translations } from "@/lib/i18n";
+import RelationTypeDonutChart from "@/components/RelationsComponents/RelationsTypeDonutChart";
+import RelationsExportDropdown from "@/components/RelationsComponents/RelationsExportDropdown";
+
+export default function RelationsPage() {
+  const [relations, setRelations] = useState<any[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const accentColor = useAccentColor();
+  const pageBackground = usePageBackground();
+  const { language } = useLanguage();
+  useEffect(() => {
+    fetch("/api/xmi-relations")
+      .then((r) => r.json())
+      .then((j) => {
+        if ("error" in j) setError(j.error);
+        else {
+          setRelations(j.relations);
+
+          // 🧩 Debug: zeige welche Typen wirklich vorkommen
+          const typeCount = j.relations.reduce(
+            (acc: Record<string, number>, r: any) => {
+              acc[r.type] = (acc[r.type] ?? 0) + 1;
+              return acc;
+            },
+            {}
+          );
+          console.log("🔍 Beziehungstypen in API:", typeCount);
+        }
+      })
+      .catch((e) => setError(String(e)));
+  }, []);
+
+  const relationTypeCounts = relations.reduce((acc, rel) => {
+    const cleanType = rel.type?.replace(/^uml:|^sysml:/, ""); // Prefix entfernen
+    acc[cleanType] = (acc[cleanType] ?? 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+
+  const importantTypes = [
+    "Connector",
+    "Association",
+    "Abstraction",
+    "Generalization",
+    "DeriveReqt",
+    "Satisfy",
+  ];
+
+  const kpiItems = [
+    {
+      key: "totalRelations",
+      title: translations[language].totalRelations, // ✅ Übersetzt
+      value: relations.length,
+      icon: <Link2 className="h-5 w-5" />,
+    },
+    ...importantTypes.map((type) => ({
+      key: type,
+      title: translations[language][type.toLowerCase()] ?? type, // ✅ versucht Übersetzung, sonst Rohwert
+      value: relationTypeCounts[type] ?? 0,
+      icon: <GitBranch className="h-5 w-5" />,
+    })),
+    {
+      key: "relationTypes",
+      title: translations[language].coveredRelations,
+      value: new Set(relations.map((r) => r.type)).size,
+      icon: <GitBranch className="h-5 w-5" />,
+    },
+  ];
+
+  // Fehlende Typen auf 0 setzen
+  importantTypes.forEach((t) => {
+    if (!(t in relationTypeCounts)) relationTypeCounts[t] = 0;
+  });
+
+  return (
+    <main
+      className="p-10 dark:bg-gray-900 bg-gray-300 min-h-screen space-y-6"
+      style={pageBackground}
+    >
+      <header className="flex items-center justify-between z-[9999]">
+        <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
+          <Cable className="h-6 w-6 " style={{ color: accentColor }} />
+          {translations[language].relations}
+        </h1>
+        <RelationsExportDropdown relations={relations} />
+      </header>
+      <div className="flex-col flex gap-6 ">
+        {/* 🔹 Sidebar KPIs */}
+        {/* 🔹 Einheitliches KPI-Grid */}
+        <div className="grid grid-cols-1 xl:grid-cols-[3.5fr_1.5fr] gap-6">
+          {/* 🔹 Linke Seite – KPI Grid */}
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 items-stretch">
+            {kpiItems.map((item) => (
+              <KpiCard
+                key={item.key}
+                title={item.title}
+                value={item.value}
+                icon={item.icon}
+              />
+            ))}
+          </div>
+
+          {/* 🔸 Rechte Seite – Donut Diagramm */}
+          <RelationTypeDonutChart relations={relations} />
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <RelationsGraph data={relations} />
+
+          <RelationsHeatmap relations={relations} />
+        </div>
+      </div>
+    </main>
+  );
+}
+
+function KpiCard({
+  title,
+  value,
+  icon,
+}: {
+  title: string;
+  value: number | string;
+  icon: React.ReactNode;
+}) {
+  const accentColor = useAccentColor();
+  const { language } = useLanguage();
+  return (
+    <div className="rounded-xl dark:bg-gray-800 bg-white p-6 shadow-md  hover:shadow-xl transition space-y-3">
+      <div className="flex flex-row justify-between">
+        <div className="text-md font-semibold text-gray-800 dark:text-white">
+          {title}
+        </div>
+        <div style={{ color: accentColor }}> {icon}</div>
+      </div>
+      <div className="mt-1 text-3xl dark:text-white font-bold text-gray-900">
+        {value}
+      </div>
+      <div className="flex gap-1 items-center ">
+        <ArrowUp className="h-3 w-3 text-green-500" />
+        <div className="font-bold text-xs text-green-500">5</div>
+        <div className="text-xs text-gray-500 font-medium">
+          {translations[language].sinceLastCommit}
+        </div>
+      </div>
+    </div>
+  );
+}

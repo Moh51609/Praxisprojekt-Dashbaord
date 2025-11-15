@@ -1,0 +1,87 @@
+/* =============================== */
+/* 🌈 Custom Radix / shadcn Select */
+/* =============================== */
+
+/* Menü-Container */
+[data-slot="select-content"],
+[data-radix-select-content] {
+  background-color: rgb(var(--card)) !important;
+  color: rgb(var(--foreground)) !important;
+  border: 1px solid rgb(var(--border)) !important;
+  border-radius: 0.75rem !important;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(10px);
+  overflow: hidden !important;
+  padding: 0 !important;
+}
+
+/* Entfernt helle Scroll-Flächen */
+[data-radix-select-viewport],
+[data-slot="select-content"] [data-radix-select-viewport],
+[data-radix-select-viewport] {
+  background-color: rgb(var(--card)) !important;
+  scrollbar-width: none;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+[data-radix-select-viewport]::-webkit-scrollbar {
+  display: none !important;
+}
+
+/* Einzelne Items */
+[data-slot="select-item"],
+[data-radix-select-item] {
+  background-color: transparent !important;
+  color: rgb(var(--foreground)) !important;
+  border-radius: 0.4rem;
+  padding: 0.5rem 0.75rem;
+  transition: background-color 0.2s, color 0.2s;
+}
+
+/* Hover */
+[data-slot="select-item"]:hover,
+[data-radix-select-item]:hover {
+  background-color: rgb(var(--primary) / 0.15) !important;
+  color: rgb(var(--primary)) !important;
+}
+
+/* Checked Item */
+[data-slot="select-item"][data-state="checked"],
+[data-radix-select-item][data-state="checked"] {
+  background-color: rgb(var(--primary) / 0.25) !important;
+  color: rgb(var(--primary)) !important;
+  font-weight: 600;
+}
+
+/* Deaktivierte Items */
+[data-slot="select-item"][data-disabled],
+[data-radix-select-item][data-disabled] {
+  opacity: 0.4;
+  background: transparent !important;
+  color: rgb(var(--muted-foreground)) !important;
+  cursor: not-allowed;
+}
+
+/* Checkbox/Icons */
+[data-slot="select-item"] svg,
+[data-radix-select-item] svg {
+  background: none !important;
+  color: rgb(var(--primary)) !important;
+  opacity: 0.9;
+}
+
+/* Scroll-Buttons vollständig entfernen */
+[data-slot="select-scroll-up-button"],
+[data-slot="select-scroll-down-button"],
+[data-radix-select-scroll-up-button],
+[data-radix-select-scroll-down-button] {
+  display: none !important;
+}
+
+/* Dark Mode Anpassung */
+.dark [data-slot="select-content"],
+.dark [data-radix-select-content] {
+  background-color: rgb(var(--card)) !important;
+  border-color: rgb(var(--border)) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+}
