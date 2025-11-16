@@ -150,7 +150,9 @@ export default function Elements() {
             return (
               <KpiCard
                 key={type}
-                title={translations[language][type.toLowerCase()] ?? type}
+                title={
+                  (translations[language] as any)[type.toLowerCase()] ?? type
+                }
                 value={typeCounts[type] ?? 0}
                 icon={React.cloneElement(icon, { className: `${color}` })}
               />
