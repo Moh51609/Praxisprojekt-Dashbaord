@@ -161,10 +161,10 @@ export default function DashboardPage() {
   if (!mounted) return null;
   return (
     <main
-      className="p-6 space-y-2 bg-gray-300 dark:bg-gray-900 dark:text-gray-50 transition-colors duration-300"
+      className="p-10 space-y-2 bg-gray-300 dark:bg-gray-900 dark:text-gray-50 transition-colors duration-300"
       style={pageBackground}
     >
-      <header className="flex items-center justify-between pl-4">
+      <header className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
           <LayoutDashboard className="h-6 w-6" style={{ color: accessColor }} />
           {translations[language].overview}
@@ -180,7 +180,7 @@ export default function DashboardPage() {
       {data && (
         <>
           {/* KPI Cards */}
-          <div className="grid grid-cols-[2fr_1fr] gap-4 px-4 pt-4 items-stretch">
+          <div className="grid grid-cols-[2fr_1fr] gap-4 items-stretch py-4">
             {/* 🔹 Linke Seite: KPI-Karten */}
             <section className="grid grid-cols-3 gap-4">
               <KpiCard
@@ -238,7 +238,7 @@ export default function DashboardPage() {
             </section>
           </div>
 
-          <div className="grid grid-cols-[1fr_1.5fr_1fr] gap-4 pt-4 px-4 ">
+          <div className="grid grid-cols-[1fr_1.5fr_1fr] gap-4 ">
             <section className="flex flex-row gap-4 items-stretch h-full w-full justify-center">
               <div className="flex-1">
                 <DonutCard
@@ -254,7 +254,7 @@ export default function DashboardPage() {
               <ElementCoverageMiniChart />
             </section>
           </div>
-          <div className="grid grid-cols-3 gap-4 p-4">
+          <div className="grid grid-cols-3 gap-4 py-4">
             <SmellSeverityBarChart smells={smells} />
             <RuleComplianceChart rules={rules} />
             <OverallKpiTrendChart />

@@ -19,6 +19,8 @@ import { useEffect, useRef, useState } from "react";
 import * as d3 from "d3";
 import { useChartZoom } from "@/hooks/useChartZoom";
 import { useChartTooltipStyle } from "@/hooks/useChartTooltipStyle";
+import { useLanguage } from "@/hooks/useLanguage";
+import { translations } from "@/lib/i18n";
 
 export default function OverallKpiTrendChart({
   history = [
@@ -39,6 +41,7 @@ export default function OverallKpiTrendChart({
   const chartZoom = useChartZoom();
   const zoomRef = useRef<SVGSVGElement | null>(null);
   const tooltipStyle = useChartTooltipStyle();
+  const { language } = useLanguage();
 
   useEffect(() => {
     if (!zoomRef.current || !chartZoom) return;
@@ -65,7 +68,7 @@ export default function OverallKpiTrendChart({
       <div className="flex justify-between items-center mb-2">
         <h2 className="text-md font-semibold text-gray-800 dark:text-gray-100 flex items-center gap-2">
           <Activity className="h-5 w-5" style={{ color: accent }} />
-          KPI-Gesamttrend
+          {translations[language].overallTrend}
         </h2>
       </div>
 
@@ -167,7 +170,7 @@ export default function OverallKpiTrendChart({
                       strokeWidth={2.5}
                       dot={{ r: 3 }}
                       activeDot={{ r: 5 }}
-                      name="Regelkonformität"
+                      name={translations[language].ruleConformance}
                     />
                     <Line
                       type="monotone"
@@ -176,7 +179,7 @@ export default function OverallKpiTrendChart({
                       strokeWidth={2.5}
                       dot={{ r: 3 }}
                       activeDot={{ r: 5 }}
-                      name="Abdeckung"
+                      name={translations[language].coverage}
                     />
                     <Line
                       type="monotone"
@@ -185,7 +188,7 @@ export default function OverallKpiTrendChart({
                       strokeWidth={2.5}
                       dot={{ r: 3 }}
                       activeDot={{ r: 5 }}
-                      name="Model Smells"
+                      name={translations[language].modelSmells}
                     />
                     <Line
                       type="monotone"
@@ -194,7 +197,7 @@ export default function OverallKpiTrendChart({
                       strokeWidth={2.5}
                       dot={{ r: 3 }}
                       activeDot={{ r: 5 }}
-                      name="Strukturqualität"
+                      name={translations[language].structureQualitiy}
                     />
                   </LineChart>
                 </ResponsiveContainer>
@@ -205,8 +208,7 @@ export default function OverallKpiTrendChart({
       </div>
 
       <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 text-center">
-        Zeigt die Entwicklung aller KPI-Bereiche (Rules, Coverage, Smells,
-        Structure) im Zeitverlauf.
+        {translations[language].overallTrendLegend}
       </p>
     </section>
   );

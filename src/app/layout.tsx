@@ -7,6 +7,7 @@ import { Montserrat } from "next/font/google";
 import { ThemeProvider } from "next-themes";
 import { useEffect, useState } from "react";
 import HomeRedirect from "./page";
+import SearchOverlay from "@/components/Search/SearchOverlay";
 
 const montserrat = Montserrat({
   subsets: ["latin"],
@@ -103,6 +104,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
               >
                 {children}
               </main>
+              <SearchOverlay />
             </div>
           </div>
         </ThemeProvider>

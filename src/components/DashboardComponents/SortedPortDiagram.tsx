@@ -62,7 +62,7 @@ export default function SortedPortDiagram({ data }: { data: ParsedModel }) {
       <div className="flex justify-between items-center mb-2 pl-6">
         <h2 className="text-md font-semibold text-gray-800 dark:text-gray-100 flex items-center gap-2">
           <BarChart3 className="h-5 w-5" style={{ color: accessColor }} />
-          Port pro Block
+          {translations[language].portsPerBlock}
         </h2>
       </div>
 

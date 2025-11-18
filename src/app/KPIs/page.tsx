@@ -96,6 +96,7 @@ import SmellHotspotHeatmap from "@/components/KpiComponents/ModelSmells/SmellVio
 import SmellViolationTable from "@/components/KpiComponents/ModelSmells/SmellViolationTable";
 import SmellSeverityTrendChart from "@/components/KpiComponents/ModelSmells/SmellSeverityTrendChart";
 import SmellDistributionHeatmap from "@/components/KpiComponents/ModelSmells/SmellDistributionHeatmap";
+import KpiExportDropdown from "@/components/KpiComponents/KpiExportDropdown";
 
 export default function KPIs() {
   const [data, setData] = useState<ParsedModel | null>(null);
@@ -174,16 +175,17 @@ export default function KPIs() {
   const totalPortPages = Math.ceil((data.classStats?.length ?? 0) / 10);
   return (
     <main
-      className="p-6 space-y-2 bg-gray-300 dark:bg-gray-900"
+      className="p-10 space-y-2 bg-gray-300 dark:bg-gray-900"
       style={pageBackground}
     >
-      <header className="flex items-center justify-between pl-4">
+      <header className="flex items-center justify-between z-[9999]">
         <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
           <ChartArea className="h-6 w-6 " style={{ color: accessColor }} />
           KPIs
         </h1>
+        <KpiExportDropdown data={data} relations={relations} smells={smells} />
       </header>
-      <div className="grid grid-cols-6 gap-4 justify-between p-4">
+      <div className="grid grid-cols-6 gap-4 justify-between py-4">
         <KpiCard
           title="Model Health"
           value="83%"
@@ -224,15 +226,15 @@ export default function KPIs() {
           exit={{ opacity: 0, y: -10 }}
           transition={{ duration: 0.3 }}
         >
-          <div className="flex flex-row justify-between px-4">
+          <div className="flex flex-row justify-between">
             {section === "structure" && (
-              <h2 className="text-lg font-semibold mb-4 flex items-center gap-2 px-4">
+              <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
                 <Construction className="h-5 w-5 text-accent" />{" "}
                 Strukturqualität
               </h2>
             )}
             {section === "rules" && (
-              <h2 className="text-lg font-semibold mb-4 flex items-center gap-2 px-4">
+              <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
                 <Settings className="h-5 w-5 text-accent" /> Regeln
                 <Tooltip>
                   <TooltipTrigger>
@@ -252,12 +254,12 @@ export default function KPIs() {
               </h2>
             )}
             {section === "coverage" && (
-              <h2 className="text-lg font-semibold mb-4 flex items-center gap-2 px-4">
+              <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
                 <PaintRoller className="h-5 w-5 text-accent" /> Abdeckung
               </h2>
             )}
             {section === "smells" && (
-              <h2 className="text-lg font-semibold mb-4 flex items-center gap-2 px-4">
+              <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
                 <MessageCircleWarning className="h-5 w-5 text-accent" />{" "}
                 Mögliche Probleme
                 <Tooltip>
@@ -299,7 +301,7 @@ export default function KPIs() {
             </Select>
           </div>
           {section === "structure" && (
-            <div className="grid grid-cols-2 h-full lg:grid-cols-2 gap-4 p-4">
+            <div className="grid grid-cols-2 h-full lg:grid-cols-2 gap-4 py-4">
               <ChartDepth
                 data={data}
                 page={page}
@@ -328,7 +330,7 @@ export default function KPIs() {
 
           {section === "rules" && (
             <div className="flex flex-col ">
-              <div className="grid grid-cols-3 h-full lg:grid-cols-3 gap-4 p-4">
+              <div className="grid grid-cols-3 h-full lg:grid-cols-3 gap-4 py-4">
                 <div className="grid grid-cols-1 gap-4">
                   <RuleComplianceChart rules={rules} />
                   <RuleViolationsByCategoryChart rules={rules} />
@@ -351,7 +353,7 @@ export default function KPIs() {
           )}
 
           {section === "coverage" && (
-            <div className="grid grid-cols-3 gap-4 p-4">
+            <div className="grid grid-cols-3 gap-4 py-4">
               <div className="grid gird-cols-1 gap-4">
                 {" "}
                 <ElementTypeDistributionChart />
@@ -367,14 +369,14 @@ export default function KPIs() {
 
           {section === "smells" && (
             <div className="flex flex-col gap-4">
-              <div className="grid grid-cols-[33%_67%] gap-4 px-4">
+              <div className="grid grid-cols-[33%_66%] gap-4 py-4">
                 <div className="grid grid-cols-1 gap-4">
                   <SmellCategoryDonutChart smells={smells} />
                   <SmellSeverityBarChart smells={smells} />
                 </div>
                 <SmellViolationTable smells={smells} />
               </div>
-              <div className="grid grid-cols-2 gap-4 px-4">
+              <div className="grid grid-cols-2 gap-4">
                 <SmellSeverityTrendChart data={smells} />
                 <SmellDistributionHeatmap smells={smells} />
               </div>

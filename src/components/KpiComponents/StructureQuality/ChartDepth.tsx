@@ -241,7 +241,7 @@ export default function ChartDepth({
                         if (!payload?.length) return null;
                         const { name, depth } = payload[0].payload;
                         return (
-                          <div className="z-9999  bg-white border border-gray-200 text-black p-2 rounded shadow text-xs">
+                          <div className="  bg-white border border-gray-200 text-black p-2 rounded shadow text-xs">
                             <strong>{name}</strong>
                             <div className="text-gray-600">Tiefe: {depth}</div>
                           </div>

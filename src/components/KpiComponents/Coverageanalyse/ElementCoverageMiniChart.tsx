@@ -17,6 +17,8 @@ import * as d3 from "d3";
 
 import { useChartBackground } from "@/hooks/useChartBackground";
 import { useChartTooltipStyle } from "@/hooks/useChartTooltipStyle";
+import { translations } from "@/lib/i18n";
+import { useLanguage } from "@/hooks/useLanguage";
 
 export default function ElementCoverageMiniChart() {
   const accent = useAccentColor();
@@ -29,6 +31,7 @@ export default function ElementCoverageMiniChart() {
   const [transform, setTransform] = useState(d3.zoomIdentity);
   const chartZoom = useChartZoom();
   const tooltipStyle = useChartTooltipStyle();
+  const { language } = useLanguage();
 
   // 🔹 Daten beim ersten Render laden (wie im Donut)
   useEffect(() => {
@@ -88,7 +91,7 @@ export default function ElementCoverageMiniChart() {
     <section className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-4">
       <h3 className="text-md font-semibold mb-2 flex items-center gap-2 text-gray-800 dark:text-gray-100">
         <Layers className="w-5 h-5" style={{ color: accent }} />
-        Elementverteilung
+        {translations[language].elementdistribution}
       </h3>
 
       <div className="relative rounded-2xl dark:bg-gray-800 bg-gray-50 p-4">
@@ -167,8 +170,7 @@ export default function ElementCoverageMiniChart() {
       </div>
 
       <p className="text-center text-xs text-gray-500 dark:text-gray-400 mt-2">
-        Zeigt die Anzahl zentraler Elementtypen (Block, Requirement, Port,
-        Connector).
+        {translations[language].elementdistributionLegend}
       </p>
     </section>
   );

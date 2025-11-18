@@ -8,6 +8,7 @@ import {
   Settings,
   User2,
   Bug,
+  Search,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useAccentColor } from "@/hooks/useAccentColor";
@@ -18,6 +19,7 @@ export default function Sidebar() {
   const accentColor = useAccentColor();
   const pathname = usePathname();
   const { language } = useLanguage();
+
   return (
     <nav className="flex h-full flex-col gap-2 p-4 ">
       <div className="mb-4 flex items-center gap-2 pb-5">
@@ -57,7 +59,7 @@ export default function Sidebar() {
         <Item
           icon={<GitBranch size={18} />}
           label={translations[language].relations}
-          href="Relations"
+          href="/Relations"
           active={pathname === "/Relations"}
         />
         <Item
@@ -66,17 +68,29 @@ export default function Sidebar() {
           href="/validationSuits"
           active={pathname === "/validationSuits"}
         />
+        <div className="px-2 mt-2">
+          <div className="flex items-center gap-2 bg-gray-100 dark:bg-gray-700 rounded-lg px-2 py-2">
+            <Search className="text-gray-500" size={16} />
+            <input
+              type="text"
+              placeholder="Suche..."
+              className="bg-transparent w-full outline-none text-sm dark:text-white"
+              onChange={(e) => {
+                const value = e.target.value;
+                console.log("Sending Search:", value);
+
+                window.dispatchEvent(
+                  new CustomEvent("global-search", { detail: value })
+                );
+              }}
+            />
+          </div>
+        </div>
       </Section>
 
       <div className="border-1 border-gray-300 w-full "></div>
 
       <Section title="Account">
-        <Item
-          icon={<User2 size={18} />}
-          label="Profil"
-          href="#"
-          active={pathname === "/profil"}
-        />
         <Item
           icon={<Settings size={18} />}
           label={translations[language].settings}

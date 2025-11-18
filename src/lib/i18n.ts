@@ -94,7 +94,23 @@ export const translations = {
     chartBackgroundGrid: "Kariert",
     chartBackgroundTransparent: "Transparent",
 
-    // Datenschutz & System
+    ruleConformance: "Regelkonformität",
+    structureQualitiy: "Strukturqualität",
+    modelSmells: "Model Smells",
+    overallTrend: "Gesamt KPI Trend",
+    overallTrendLegend:
+      "Zeigt die Entwicklung aller KPI-Bereiche (Rules, Coverage, Smells, Structure) im Zeitverlauf.",
+    elementdistribution: "Elementverteilung",
+    elementdistributionLegend:
+      "Zeigt die Anzahl zentraler Elementtypen (Block, Requirement, Port, Connector).",
+
+    ruleConformanceLegend:
+      "Zeigt die Verteilung der bestandenen und nicht bestandenen Regeln",
+    passed: "bestanden",
+
+    smellsBySeverity: "Smells nach Schweregrad",
+    smellsBySeverityLegend:
+      "Zeigt die Verteilung der Model-Smells nach Schweregrad (Low, Medium, High).",
 
     deleteData: "Daten & Cookies löschen",
 
@@ -112,6 +128,7 @@ export const translations = {
     confirmDeleteButton: "Löschen",
     cancel: "Abbrechen",
   },
+
   en: {
     overview: "Overview",
     blocks: "Blocks",
@@ -207,8 +224,22 @@ export const translations = {
     chartBackgroundGrid: "Grid",
     chartBackgroundTransparent: "Transparent",
 
-    // Privacy & System
+    ruleConformance: "Ruleconformance",
+    structureQualitiy: "Structurequality",
+    modelSmells: "Model Smells",
+    overallTrend: "Overall Kpi Trend",
+    overallTrendLegend:
+      "Shows the development of all KPI areas (Rules, Coverage, Smells, Structure) over time.",
+    elementdistribution: "Element distribution",
+    elementdistributionLegend:
+      "Displays the number of central element types (Block, Requirement, Port, Connector).",
 
+    ruleConformanceLegend: "Shows the distribution of passed and failed rules",
+    passed: "passed",
+
+    smellsBySeverity: "Smells by Severity",
+    smellsBySeverityLegend:
+      "Shows the distribution of model smells by severity (Low, Medium, High).",
     deleteData: "Delete data & cookies",
 
     // Buttons & Actions

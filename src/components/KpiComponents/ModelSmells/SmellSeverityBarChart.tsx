@@ -18,6 +18,8 @@ import { useEffect, useRef, useState } from "react";
 import { useChartZoom } from "@/hooks/useChartZoom";
 import * as d3 from "d3";
 import { useChartTooltipStyle } from "@/hooks/useChartTooltipStyle";
+import { translations } from "@/lib/i18n";
+import { useLanguage } from "@/hooks/useLanguage";
 
 export default function SmellSeverityBarChart({ smells }: { smells: any[] }) {
   const accent = useAccentColor();
@@ -28,6 +30,7 @@ export default function SmellSeverityBarChart({ smells }: { smells: any[] }) {
   const zoomRef = useRef<SVGSVGElement | null>(null);
   const [transform, setTransform] = useState(d3.zoomIdentity);
   const chartZoom = useChartZoom();
+  const { language } = useLanguage();
 
   // 🔹 Gruppiere Smells nach Severity
   const severityCounts = smells.reduce(
@@ -76,7 +79,7 @@ export default function SmellSeverityBarChart({ smells }: { smells: any[] }) {
       {/* 🔹 Titel */}
       <h2 className="text-md font-semibold mb-4 text-gray-800 dark:text-gray-100 flex items-center gap-2">
         <ThermometerSun className="h-5 w-5" style={{ color: accent }} />
-        Smells nach Schweregrad
+        {translations[language].smellsBySeverity}
       </h2>
 
       {/* 🔹 Chart */}
@@ -173,8 +176,7 @@ export default function SmellSeverityBarChart({ smells }: { smells: any[] }) {
       </div>
 
       <p className="text-xs text-gray-500 dark:text-gray-400 mt-3 text-center">
-        Zeigt die Verteilung der Model-Smells nach Schweregrad (Low, Medium,
-        High).
+        {translations[language].smellsBySeverityLegend}
       </p>
     </section>
   );
