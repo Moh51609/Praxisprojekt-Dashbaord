@@ -63,7 +63,7 @@ export default function RelationsPage() {
     },
     ...importantTypes.map((type) => ({
       key: type,
-      title: translations[language][type.toLowerCase()] ?? type, // ✅ versucht Übersetzung, sonst Rohwert
+      title: "type", // ✅ versucht Übersetzung, sonst Rohwert
       value: relationTypeCounts[type] ?? 0,
       icon: <GitBranch className="h-5 w-5" />,
     })),
