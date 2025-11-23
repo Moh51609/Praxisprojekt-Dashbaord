@@ -126,6 +126,28 @@ export const translations = {
     depthDistributionLegend:
       "Zeigt, wie viele Elemente sich auf jeder Hierarchieebene befinden. Der rote Strich markiert die durchschnittliche Tiefe des Modells.",
 
+    diagramTypeInModel: "Diagrammtypen im Modell",
+    diagramTypeInModelLegend:
+      "Zeigt, welche SysML-Diagrammtypen im Modell vorkommen (✓ = vorhanden). Beim Hover werden betroffene Elemente und Packages angezeigt.",
+    diagramType: "Diagrammtype",
+    available: "Vorhanden",
+    number: "Anzahl",
+
+    systemicCoverage: "Systemische Abdeckung",
+    systemicCoverageLegend:
+      "Zeigt den prozentualen Abdeckungsgrad je Modellkategorie (Block, Requirement, Port, Connector, Package).",
+
+    modelSmellsByCategory: "Model Smells nach Kategorie",
+    modelSmellsByCategoryLegend:
+      "Zeigt den Anteil der Model-Smells je Qualitätskategorie (Struktur, Naming, Traceability usw.).",
+    noModelSmellsFound: "Keine Model Smells gefunden",
+    smellHotspotInModel: "Smell-Hotspot im Modell",
+    smellHotspotInModelLegend:
+      "Zeigt, in welchen Packages oder Blöcken besonders viele Model-Smells auftreten.",
+
+    smellTrendChartInModel: "Model-Smells Verlauf im Modell",
+    smellTrendInModel: "Model-Smells im Modell",
+
     ruleHotspot: "Regel-Hotspots im Modell",
     ruleHotspotLegend:
       "Zeigt, in welchen Modellbereichen (Paketen/Subsystemen) die meisten Regelverstöße auftreten.",
@@ -135,6 +157,10 @@ export const translations = {
     packageDistribution: "Package Verteilung",
     packageDistributionLegend:
       "Zeigt, wie viele Elemente in jedem Package enthalten sind.",
+
+    elementTypePerPackage: "Elementtypen pro Package",
+    elementTypePerPackageLegend:
+      "Zeigt die Verteilung der Elementtypen im ausgewählten Package.",
 
     qualityTrend: "Qualitäts-Trend",
 
@@ -171,12 +197,17 @@ export const translations = {
     s14: "Requirement ohne Verification",
     s15: "Elemente ohne Stereotype",
 
+    coverageTrend: "Abdeckungs-Trend",
+    coverageTrendLegend:
+      "Zeigt die Entwicklung des Abdeckungsgrads (%) über die Zeit.",
+
     rule: "Regel",
     element: "Element",
     packagePath: "Package Pfad",
     desc: "Beschreibung",
     severity: "Schwere",
     showAllRules: "Alle Regeln anzeigen",
+    category: "Kategorie",
 
     // Buttons & Actions
     delete: "Löschen",
@@ -304,6 +335,37 @@ export const translations = {
     ruleConformanceLegend: "Shows the distribution of passed and failed rules",
     passed: "passed",
 
+    systemicCoverage: "Systemic Coverage",
+    systemicCoverageLegend:
+      "Shows the percentage coverage for each model category (Block, Requirement, Port, Connector, Package).",
+
+    elementTypePerPackage: "Elementtypes per Package",
+    elementTypePerPackageLegend:
+      "Displays the distribution of element types in the selected package.",
+
+    coverageTrend: "Coverage-Trend",
+    coverageTrendLegend:
+      "Shows the development of the coverage rate (%) over time.",
+
+    diagramTypeInModel: "Diagramtype in Model",
+    diagramTypeInModelLegend:
+      "Shows which SysML diagram types are present in the model (✓ = present). Hovering displays the affected elements and packages.",
+    diagramType: "Diagramtype",
+    available: "Available",
+    number: "Number",
+
+    modelSmellsByCategory: "Model Smells by Catgeory",
+    modelSmellsByCategoryLegend:
+      "Shows the proportion of model smells by quality category (structure, naming, traceability, etc.).",
+    noModelSmellsFound: "No Model Smells found",
+    smellHotspotInModel: "Smell-Hotspot in Model",
+    smellHotspotInModelLegend:
+      "Shows in which packages or blocks a particularly high number of model smells occur.",
+
+    smellTrendInModel: "Model-Smells in Model",
+
+    smellTrendChartInModel: "Model-Smells history in Model",
+
     ruleViolations: "Rule Violations",
 
     depthDistribution: "Depth Distribution",
@@ -344,6 +406,7 @@ export const translations = {
     desc: "Description",
     severity: "Severity",
     showAllRules: "show all Rules",
+    category: "Category",
 
     ruleHotspot: "Rule-Hotspots in Modell",
     ruleHotspotLegend:

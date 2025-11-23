@@ -90,7 +90,7 @@ export default function Sidebar() {
         <div>
           <button
             onClick={() => window.dispatchEvent(new CustomEvent("toggle-tree"))}
-            className="px-3 py-2 w-full text-sm rounded-lg text-gray-700 dark:text-white dark:hover:bg-gray-900 hover:bg-gray-100 transition"
+            className="px-2 py-2 w-full text-sm rounded-lg text-gray-700 dark:text-white dark:hover:bg-gray-900 hover:bg-gray-100 transition"
           >
             <div className="flex gap-2">
               <span className="text-gray-500 ">

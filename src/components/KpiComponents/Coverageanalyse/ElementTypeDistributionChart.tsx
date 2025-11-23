@@ -19,12 +19,15 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 import { Layers } from "lucide-react";
+import { translations } from "@/lib/i18n";
+import { useLanguage } from "@/hooks/useLanguage";
 
 export default function ElementTypeDistributionChart() {
   const accent = useAccentColor();
   const { theme } = useTheme();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { language } = useLanguage();
 
   // 📦 API-Daten
   const [packages, setPackages] = useState<string[]>([]);
@@ -109,7 +112,7 @@ export default function ElementTypeDistributionChart() {
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-md font-semibold text-gray-800 dark:text-gray-100 flex items-center gap-2">
           <Layers className="h-5 w-5" style={{ color: accent }} />
-          Elementtypen pro Package
+          {translations[language].elementTypePerPackage}
         </h2>
 
         {/* 🔽 Package-Auswahl */}
@@ -188,7 +191,7 @@ export default function ElementTypeDistributionChart() {
       )}
 
       <p className="text-xs text-gray-500 dark:text-gray-400 mt-3 text-center">
-        Zeigt die Verteilung der Elementtypen im ausgewählten Package.
+        {translations[language].elementTypePerPackageLegend}
       </p>
     </section>
   );

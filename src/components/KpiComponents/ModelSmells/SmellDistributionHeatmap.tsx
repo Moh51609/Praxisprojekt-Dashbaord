@@ -90,7 +90,7 @@ export default function SmellHotspotHeatmap({ smells }: { smells: any[] }) {
       <div className="flex flex-row gap-2 items-center mb-4">
         <Flame className="h-6 w-6" style={{ color: accentColor }} />
         <h2 className="text-md font-semibold text-gray-800 dark:text-gray-100">
-          Smell-Hotspots im Modell
+          {translations[language].smellHotspotInModel}
         </h2>
       </div>
 
@@ -131,8 +131,7 @@ export default function SmellHotspotHeatmap({ smells }: { smells: any[] }) {
       </div>
 
       <p className="text-xs text-gray-500 mt-3 dark:text-gray-300 text-center">
-        Zeigt, in welchen Packages oder Blöcken besonders viele Model-Smells
-        auftreten.
+        {translations[language].smellHotspotInModelLegend}
       </p>
     </section>
   );

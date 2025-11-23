@@ -18,6 +18,8 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
+import { translations } from "@/lib/i18n";
+import { useLanguage } from "@/hooks/useLanguage";
 
 interface SmellEntry {
   id: string;
@@ -36,7 +38,7 @@ export default function SmellViolationTable({
 }) {
   const accentColor = useAccentColor();
   const [selectedCategory, setSelectedCategory] = useState("all");
-
+  const { language } = useLanguage();
   // 🔹 Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 13;
@@ -63,7 +65,7 @@ export default function SmellViolationTable({
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-lg font-semibold flex items-center gap-2 text-gray-800 dark:text-gray-100">
           <Bug className="h-5 w-5" style={{ color: accentColor }} />
-          Model-Smells im Modell
+          {translations[language].smellTrendInModel}
         </h2>
 
         <div className="flex items-center gap-2">
@@ -99,11 +101,11 @@ export default function SmellViolationTable({
               <TableRow className="border-b border-gray-200 dark:border-gray-700">
                 <TableHead>ID</TableHead>
                 <TableHead>Smell</TableHead>
-                <TableHead>Element</TableHead>
-                <TableHead>Package Pfad</TableHead>
-                <TableHead>Beschreibung</TableHead>
-                <TableHead>Kategorie</TableHead>
-                <TableHead>Schwere</TableHead>
+                <TableHead> {translations[language].element}</TableHead>
+                <TableHead> {translations[language].packagePath}</TableHead>
+                <TableHead> {translations[language].desc}</TableHead>
+                <TableHead> {translations[language].category}</TableHead>
+                <TableHead> {translations[language].severity}</TableHead>
               </TableRow>
             </TableHeader>
 

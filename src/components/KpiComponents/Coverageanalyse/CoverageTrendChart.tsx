@@ -17,6 +17,8 @@ import { useChartBackground } from "@/hooks/useChartBackground";
 import { useEffect, useRef, useState } from "react";
 import * as d3 from "d3";
 import { useChartZoom } from "@/hooks/useChartZoom";
+import { translations } from "@/lib/i18n";
+import { useLanguage } from "@/hooks/useLanguage";
 
 export default function CoverageTrendChart() {
   const accent = useAccentColor();
@@ -27,6 +29,7 @@ export default function CoverageTrendChart() {
   const [transform, setTransform] = useState(d3.zoomIdentity);
   const chartZoom = useChartZoom();
 
+  const { language } = useLanguage();
   // 🔹 Beispielhafte Trenddaten (später evtl. aus API oder Modellhistorie)
   const [trendData, setTrendData] = useState([
     { date: "01.10", coverage: 56 },
@@ -56,7 +59,7 @@ export default function CoverageTrendChart() {
       <div className="flex justify-between items-center mb-2">
         <h2 className="text-md font-semibold text-gray-800 dark:text-gray-100 flex items-center gap-2">
           <ChartLine className="h-5 w-5" style={{ color: accent }} />
-          Abdeckungs-Trend
+          {translations[language].coverageTrend}
         </h2>
       </div>
 
@@ -148,7 +151,7 @@ export default function CoverageTrendChart() {
       </div>
 
       <p className="text-xs text-gray-500 dark:text-gray-400 mt-3 text-center">
-        Zeigt die Entwicklung des Abdeckungsgrads (%) über die Zeit.
+        {translations[language].coverageTrendLegend}{" "}
       </p>
     </section>
   );

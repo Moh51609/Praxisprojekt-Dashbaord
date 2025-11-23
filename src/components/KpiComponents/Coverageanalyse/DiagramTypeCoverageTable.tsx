@@ -17,6 +17,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { translations } from "@/lib/i18n";
+import { useLanguage } from "@/hooks/useLanguage";
 
 export default function DiagramTypeCoverageTable({ data }: { data: any }) {
   const accent = useAccentColor();
@@ -41,6 +43,7 @@ export default function DiagramTypeCoverageTable({ data }: { data: any }) {
     "Profile",
   ];
 
+  const { language } = useLanguage();
   // 🔹 Zuordnung: Diagrammtyp → enthaltene Elemente
   const diagramMap: Record<string, string[]> = {};
 
@@ -101,16 +104,25 @@ export default function DiagramTypeCoverageTable({ data }: { data: any }) {
     <section className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-6">
       <h2 className="text-md font-semibold mb-4 text-gray-800 dark:text-gray-100 flex items-center gap-2">
         <Layers className="h-5 w-5" style={{ color: accent }} />
-        Diagrammtypen im Modell
+        {translations[language].diagramTypeInModel}
       </h2>
 
       <div className="overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow className="border-b border-gray-200 dark:border-gray-700">
-              <TableHead className="w-48">Diagrammtyp</TableHead>
-              <TableHead className="text-center">Vorhanden</TableHead>
-              <TableHead className="text-center">Anzahl</TableHead>
+              <TableHead className="w-48">
+                {" "}
+                {translations[language].diagramType}
+              </TableHead>
+              <TableHead className="text-center">
+                {" "}
+                {translations[language].available}
+              </TableHead>
+              <TableHead className="text-center">
+                {" "}
+                {translations[language].number}
+              </TableHead>
             </TableRow>
           </TableHeader>
 
@@ -170,8 +182,7 @@ export default function DiagramTypeCoverageTable({ data }: { data: any }) {
       </div>
 
       <p className="text-xs text-gray-500 dark:text-gray-400 mt-3 text-center">
-        Zeigt, welche SysML-Diagrammtypen im Modell vorkommen (✓ = vorhanden).
-        Beim Hover werden betroffene Elemente und Packages angezeigt.
+        {translations[language].diagramTypeInModelLegend}
       </p>
     </section>
   );

@@ -11,10 +11,13 @@ import {
 import { useAccentColor } from "@/hooks/useAccentColor";
 import { useTheme } from "next-themes";
 import { AlertTriangle } from "lucide-react";
+import { translations } from "@/lib/i18n";
+import { useLanguage } from "@/hooks/useLanguage";
 
 export default function SmellCategoryDonutChart({ smells }: { smells: any[] }) {
   const accent = useAccentColor();
   const { theme } = useTheme();
+  const { language } = useLanguage();
 
   // 🔹 Gruppiere Smells nach Kategorie
   const categoryCounts = smells.reduce(
@@ -56,7 +59,7 @@ export default function SmellCategoryDonutChart({ smells }: { smells: any[] }) {
       {/* 🔹 Titel */}
       <h2 className="text-md font-semibold mb-4 text-gray-800 dark:text-gray-100 flex items-center gap-2">
         <AlertTriangle className="h-5 w-5" style={{ color: accent }} />
-        Model Smells nach Kategorie
+        {translations[language].modelSmellsByCategory}
       </h2>
 
       {/* 🔹 Diagramm */}
@@ -113,13 +116,12 @@ export default function SmellCategoryDonutChart({ smells }: { smells: any[] }) {
         </div>
       ) : (
         <p className="text-center text-gray-500 dark:text-gray-400 text-sm py-10">
-          Keine Model-Smells gefunden.
+          {translations[language].noModelSmellsFound}
         </p>
       )}
 
       <p className="text-xs text-gray-500 dark:text-gray-400 mt-3 text-center">
-        Zeigt den Anteil der Model-Smells je Qualitätskategorie (Struktur,
-        Naming, Traceability usw.).
+        {translations[language].modelSmellsByCategoryLegend}
       </p>
     </section>
   );

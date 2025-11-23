@@ -16,6 +16,8 @@ import * as d3 from "d3";
 import { useChartZoom } from "@/hooks/useChartZoom";
 import { useRef, useState } from "react";
 import { useChartBackground } from "@/hooks/useChartBackground";
+import { useLanguage } from "@/hooks/useLanguage";
+import { translations } from "@/lib/i18n";
 
 export default function SystemCoverageRadarChart({
   data,
@@ -30,6 +32,7 @@ export default function SystemCoverageRadarChart({
   const svgRef = useRef<SVGSVGElement | null>(null);
   const [transform, setTransform] = useState(d3.zoomIdentity);
   const chartZoom = useChartZoom();
+  const { language } = useLanguage();
 
   // 🔹 Alle IDs, die in Relationen vorkommen
   const relatedIds = new Set(
@@ -68,7 +71,7 @@ export default function SystemCoverageRadarChart({
     <section className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-6">
       <h2 className="text-md font-semibold mb-4 text-gray-800 dark:text-gray-100 flex items-center gap-2">
         <Compass className="h-5 w-5" style={{ color: accent }} />
-        Systemische Abdeckung (Radar)
+        {translations[language].systemicCoverage}
       </h2>
 
       <div className="relative rounded-2xl dark:bg-gray-800 bg-gray-50 p-4">
@@ -161,8 +164,7 @@ export default function SystemCoverageRadarChart({
       </div>
 
       <p className="text-xs text-gray-500 dark:text-gray-400 mt-3 text-center">
-        Zeigt den prozentualen Abdeckungsgrad je Modellkategorie (Block,
-        Requirement, Port, Connector, Package).
+        {translations[language].systemicCoverageLegend}
       </p>
     </section>
   );

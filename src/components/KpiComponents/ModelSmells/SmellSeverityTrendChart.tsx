@@ -18,6 +18,8 @@ import { useEffect, useRef, useState } from "react";
 import { useChartBackground } from "@/hooks/useChartBackground";
 import { useChartZoom } from "@/hooks/useChartZoom";
 import * as d3 from "d3";
+import { translations } from "@/lib/i18n";
+import { useLanguage } from "@/hooks/useLanguage";
 
 export default function SmellSeverityTrendChart({ data }: { data: any[] }) {
   const accent = useAccentColor();
@@ -29,6 +31,7 @@ export default function SmellSeverityTrendChart({ data }: { data: any[] }) {
   const zoomRef = useRef<SVGSVGElement | null>(null);
   const [transform, setTransform] = useState(d3.zoomIdentity);
   const chartZoom = useChartZoom();
+  const { language } = useLanguage();
 
   // 🔹 Smell-Daten zählen nach Schweregrad
   const low = data.filter((s) => s.severity === "Low").length;
@@ -68,7 +71,7 @@ export default function SmellSeverityTrendChart({ data }: { data: any[] }) {
       <div className="flex justify-between items-center mb-2">
         <h2 className="text-md font-semibold text-gray-800 dark:text-gray-100 flex items-center gap-2">
           <Activity className="h-5 w-5" style={{ color: accent }} />
-          Smell-Trend nach Schweregrad
+          {translations[language].smellTrendChartInModel}
         </h2>
       </div>
 
