@@ -84,6 +84,9 @@ export const translations = {
     patternDots: "Punkte",
     patternGeo: "Geometrisch",
 
+    ruleAnalysis: "Regelanalyse",
+    coverageAnalysis: "Abdeckungsanalyse",
+
     // Daten & Diagramme
     maxElements: "Max. Elemente pro Diagramm",
 
@@ -104,15 +107,76 @@ export const translations = {
     elementdistributionLegend:
       "Zeigt die Anzahl zentraler Elementtypen (Block, Requirement, Port, Connector).",
 
+    isolatedELements: "Isolierte ELemente",
+    isolatedELementsLegend:
+      "Rote Punkte repräsentieren isolierte Elemente . Verbundene Elemente bilden Cluster.",
+
     ruleConformanceLegend:
       "Zeigt die Verteilung der bestandenen und nicht bestandenen Regeln",
     passed: "bestanden",
+
+    rules: "Regeln",
+    possibleProblems: "Mögliche Probleme",
+
+    ruleDependencies: "Regelabhängigkeit",
+    ruleDependenciesLegend:
+      "Zeigt, welche Regeln häufig gemeinsam verletzt werden.",
+
+    depthDistribution: "Tiefenverteilung",
+    depthDistributionLegend:
+      "Zeigt, wie viele Elemente sich auf jeder Hierarchieebene befinden. Der rote Strich markiert die durchschnittliche Tiefe des Modells.",
+
+    ruleHotspot: "Regel-Hotspots im Modell",
+    ruleHotspotLegend:
+      "Zeigt, in welchen Modellbereichen (Paketen/Subsystemen) die meisten Regelverstöße auftreten.",
+
+    ruleViolationsByCategory: "Regelverstöße nach Kategorie",
+
+    packageDistribution: "Package Verteilung",
+    packageDistributionLegend:
+      "Zeigt, wie viele Elemente in jedem Package enthalten sind.",
+
+    qualityTrend: "Qualitäts-Trend",
+
+    ruleViolations: "Regelverstöße",
+    topViolatingRules: "Top-Regelverstöße",
 
     smellsBySeverity: "Smells nach Schweregrad",
     smellsBySeverityLegend:
       "Zeigt die Verteilung der Model-Smells nach Schweregrad (Low, Medium, High).",
 
     deleteData: "Daten & Cookies löschen",
+
+    r1: "Blöcke ohne Ports",
+    r2: "Leere Packages",
+    r3: "Unbenannte Elemente",
+    r4: "Ungültige Namenskonvention",
+    r5: "Isolierte Elemente",
+    r6: "Ungültige Connector-Enden",
+    r7: "Requirement ohne Satisfy",
+
+    s1: "Deep Nesting",
+    s2: "Großes Package",
+    s3: "Stark befüllter Block",
+    s4: "Doppelte Namen",
+    s5: "Ähnliche Namen",
+    s6: "Unreferenzierte Requirement",
+    s7: "Connector ohne Target",
+    s8: "Leeres Diagram",
+    s9: "Zu stark befülltes Diagram",
+    s10: "Lange Element Namen",
+    s11: "Model Depth Disbalace",
+    s12: "Doppelte Relation",
+    s13: "Ungenutzer Port",
+    s14: "Requirement ohne Verification",
+    s15: "Elemente ohne Stereotype",
+
+    rule: "Regel",
+    element: "Element",
+    packagePath: "Package Pfad",
+    desc: "Beschreibung",
+    severity: "Schwere",
+    showAllRules: "Alle Regeln anzeigen",
 
     // Buttons & Actions
     delete: "Löschen",
@@ -214,6 +278,9 @@ export const translations = {
     patternDots: "Dots",
     patternGeo: "Geometric",
 
+    ruleAnalysis: "Rule anaylsis",
+    coverageAnalysis: "Coverage analysis",
+
     // Data & Charts
     maxElements: "Max. elements per chart",
 
@@ -236,6 +303,68 @@ export const translations = {
 
     ruleConformanceLegend: "Shows the distribution of passed and failed rules",
     passed: "passed",
+
+    ruleViolations: "Rule Violations",
+
+    depthDistribution: "Depth Distribution",
+    depthDistributionLegend:
+      "Shows how many elements are on each level of the hierarchy. The red line marks the average depth of the model.",
+
+    qualityTrend: "Quality-Trend",
+
+    rules: "Rules",
+
+    r1: "Block without Ports",
+    r2: "Empty Packages",
+    r3: "Unnamed Elements",
+    r4: "Invalid naming convention",
+    r5: "Isolated Elements",
+    r6: "Invalid Connector-Endings",
+    r7: "Requirement without Satisfy",
+
+    s1: "Deep Nesting",
+    s2: "Large Package",
+    s3: "Massive Block",
+    s4: "Duplicate Names",
+    s5: "Similar Names",
+    s6: "Unreferenced Requirement",
+    s7: "Dead Connector",
+    s8: "Empty Diagram",
+    s9: "Overloaded Diagram",
+    s10: "Long Element Names",
+    s11: "Model Depth Imbalance",
+    s12: "Redundant Relation",
+    s13: "Unused Port",
+    s14: "Requirement without Verification",
+    s15: "Element Without Stereotype",
+
+    rule: "Rule",
+    element: "Element",
+    packagePath: "Package path",
+    desc: "Description",
+    severity: "Severity",
+    showAllRules: "show all Rules",
+
+    ruleHotspot: "Rule-Hotspots in Modell",
+    ruleHotspotLegend:
+      "Shows in which model areas (packages/subsystems) most rule violations occur.",
+
+    topViolatingRules: "Top-Violatingrules",
+    ruleViolationsByCategory: "Ruleviolation by Catgeory",
+
+    packageDistribution: "Package Distribution",
+    packageDistributionLegend:
+      "Shows how many items are included in each package.",
+
+    isolatedELements: "Isolated Elements",
+    isolatedELementsLegend:
+      "Red dots represent isolated elements. Connected elements form clusters.",
+
+    possibleProblems: "Possible Problems",
+
+    ruleDependencies: "Rule Dependency",
+    ruleDependenciesLegend:
+      "Shows which rules are frequently violated together.",
 
     smellsBySeverity: "Smells by Severity",
     smellsBySeverityLegend:

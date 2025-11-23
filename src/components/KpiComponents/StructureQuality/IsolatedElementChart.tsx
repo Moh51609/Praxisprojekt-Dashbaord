@@ -6,6 +6,8 @@ import { useAccentColor } from "@/hooks/useAccentColor";
 import { useTheme } from "next-themes";
 import { AlertTriangle } from "lucide-react";
 import { useChartBackground } from "@/hooks/useChartBackground";
+import { translations } from "@/lib/i18n";
+import { useLanguage } from "@/hooks/useLanguage";
 
 export default function IsolatedElementsChart({ relations, elements }: any) {
   const ref = useRef<SVGSVGElement | null>(null);
@@ -15,6 +17,7 @@ export default function IsolatedElementsChart({ relations, elements }: any) {
   const containerRef = useRef<HTMLDivElement>(null);
   const graphRef = useRef<any>();
   const [size, setSize] = useState({ width: 0, height: 600 });
+  const { language } = useLanguage();
 
   useEffect(() => {
     function updateSize() {
@@ -145,7 +148,7 @@ export default function IsolatedElementsChart({ relations, elements }: any) {
       <div className="flex justify-between mb-4 items-center">
         <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100 flex items-center gap-2">
           <AlertTriangle className="h-5 w-5" style={{ color: accentColor }} />
-          Isolierte Elemente
+          {translations[language].isolatedELements}
         </h2>
       </div>
       <div
@@ -185,8 +188,7 @@ export default function IsolatedElementsChart({ relations, elements }: any) {
         <svg ref={ref}></svg>
       </div>
       <p className="text-xs text-gray-500 mt-3 dark:text-gray-300">
-        Rote Punkte repräsentieren isolierte Elemente . Verbundene Elemente
-        bilden Cluster.
+        {translations[language].isolatedELementsLegend}
       </p>
     </section>
   );

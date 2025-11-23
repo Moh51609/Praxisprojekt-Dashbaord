@@ -120,7 +120,7 @@ export default function RuleDependencyChordChart({ rules }: { rules: any[] }) {
       <div className="flex flex-row justify-between mb-4">
         <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100 flex items-center gap-2">
           <CircleDot className="h-5 w-5" style={{ color: accentColor }} />
-          {translations[language].ruleDependencies || "Regelabhängigkeiten"}
+          {translations[language].ruleDependencies}
         </h2>
       </div>
 
@@ -129,8 +129,7 @@ export default function RuleDependencyChordChart({ rules }: { rules: any[] }) {
       </div>
 
       <p className="text-xs text-gray-500 dark:text-gray-300 mt-3 text-center">
-        {translations[language].ruleDependenciesDesc ||
-          "Zeigt, welche Regeln häufig gemeinsam verletzt werden."}
+        {translations[language].ruleDependenciesLegend}
       </p>
     </section>
   );

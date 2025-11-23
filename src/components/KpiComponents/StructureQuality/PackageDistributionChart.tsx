@@ -18,6 +18,8 @@ import { useChartBackground } from "@/hooks/useChartBackground";
 import { useRef, useState, useEffect } from "react";
 import * as d3 from "d3";
 import { useChartZoom } from "@/hooks/useChartZoom";
+import { translations } from "@/lib/i18n";
+import { useLanguage } from "@/hooks/useLanguage";
 
 export default function PackageDistributionChart({ data }: { data: any }) {
   const accentColor = useAccentColor();
@@ -27,6 +29,7 @@ export default function PackageDistributionChart({ data }: { data: any }) {
   const [transform, setTransform] = useState(d3.zoomIdentity);
   const chartZoom = useChartZoom();
   const axisColor = theme === "dark" ? "#D1D5DB" : "#111827";
+  const { language } = useLanguage();
 
   // 🔹 Gruppiere Elemente nach Package
   const packageCounts: Record<string, number> = {};
@@ -65,7 +68,7 @@ export default function PackageDistributionChart({ data }: { data: any }) {
       <div className="flex justify-between mb-4 items-center">
         <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100 flex items-center gap-2">
           <Package className="h-5 w-5" style={{ color: accentColor }} />
-          Package-Verteilung
+          {translations[language].packageDistribution}
         </h2>
       </div>
 
@@ -192,7 +195,7 @@ export default function PackageDistributionChart({ data }: { data: any }) {
 
       {/* 🔹 Legende */}
       <p className="text-xs text-gray-500 mt-2 dark:text-gray-300">
-        Zeigt, wie viele Elemente in jedem Package enthalten sind.
+        {translations[language].packageDistributionLegend}
       </p>
     </section>
   );

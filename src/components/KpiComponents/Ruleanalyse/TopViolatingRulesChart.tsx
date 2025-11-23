@@ -81,7 +81,7 @@ export default function TopViolatingRulesChart({ rules }: { rules: any[] }) {
       <div className="flex flex-row justify-between mb-4">
         <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100 flex items-center gap-2">
           <TrendingUp className="h-5 w-5" style={{ color: accentColor }} />
-          {translations[language].topViolatingRules || "Top-Regelverstöße"}
+          {translations[language].topViolatingRules}
         </h2>
       </div>
 

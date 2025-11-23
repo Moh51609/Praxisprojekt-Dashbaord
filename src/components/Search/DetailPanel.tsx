@@ -3,6 +3,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
 import { useEffect } from "react";
+import BlockPreview from "./BlockPreview";
 
 export default function DetailPanel({ item, onClose }: any) {
   const isRelation = item?.source && item?.target;
@@ -79,7 +80,7 @@ function ElementDetails({ item }: any) {
         <ul className="space-y-1 pl-3 border-l border-gray-700">
           <BulletInfo label="Name" value={item.name} />
           <BulletInfo label="Typ" value={item.type?.replace("uml:", "")} />
-          <BulletInfo label="Package" value={item.packageName ?? "—"} />
+          <BulletInfo label="Package" value={item.package ?? "—"} />
           <BulletInfo label="Stereotyp" value={item.stereotype ?? "—"} />
           <BulletInfo label="ID" value={item.id ?? "—"} />
         </ul>
@@ -157,6 +158,10 @@ function ElementDetails({ item }: any) {
           <BulletInfo label="Verstöße" value={item.violations?.length ?? 0} />
         </ul>
       </section>
+
+      <section>
+        <BlockPreview item={item} />
+      </section>
     </div>
   );
 }
@@ -182,9 +187,15 @@ function Info({ label, value }: any) {
 
 function BulletInfo({ label, value }: any) {
   return (
-    <li className="text-sm leading-relaxed">
-      <span className="font-medium text-gray-300">{label}: </span>
-      <span className="text-gray-100">{value}</span>
-    </li>
+    <div className="grid grid-cols-[140px_10px_1fr] gap-4 text-sm py-1 items-start">
+      {/* Label – linksbündig, mit truncate */}
+      <div className="text-gray-400 font-medium truncate">{label}</div>
+
+      {/* Doppelpunkt – rechtsbündig, immer exakt gleiche Position */}
+      <div className="text-gray-400 font-medium text-right">:</div>
+
+      {/* Value – linksbündig, truncate */}
+      <div className="text-gray-100 truncate max-w-full">{value}</div>
+    </div>
   );
 }

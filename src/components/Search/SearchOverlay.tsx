@@ -6,8 +6,8 @@ import DetailPanel from "./DetailPanel";
 
 export default function SearchOverlay() {
   const [query, setQuery] = useState("");
-  const [elements, setElements] = useState([]);
-  const [relations, setRelations] = useState([]);
+  const [searchIndex, setSearchIndex] = useState<any[]>([]);
+
   const [showResults, setShowResults] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
 
@@ -15,11 +15,9 @@ export default function SearchOverlay() {
   useEffect(() => {
     fetch("/api/xmi")
       .then((r) => r.json())
-      .then((j) => setElements(j.elements ?? []));
-
-    fetch("/api/xmi-relations")
-      .then((r) => r.json())
-      .then((j) => setRelations(j.relations ?? []));
+      .then((j) => {
+        setSearchIndex(j.searchIndex ?? []);
+      });
   }, []);
 
   // Sucheingabe Listener
@@ -38,15 +36,8 @@ export default function SearchOverlay() {
   if (!showResults) return null;
 
   // Filterlogik
-  const filteredElements = elements.filter((e) =>
-    e.name?.toLowerCase().includes(query.toLowerCase())
-  );
-
-  const filteredRelations = relations.filter(
-    (r) =>
-      r.source?.toLowerCase().includes(query.toLowerCase()) ||
-      r.target?.toLowerCase().includes(query.toLowerCase()) ||
-      r.type?.toLowerCase().includes(query.toLowerCase())
+  const filtered = searchIndex.filter((item) =>
+    item.name?.toLowerCase().includes(query.toLowerCase())
   );
 
   return (
@@ -69,43 +60,33 @@ export default function SearchOverlay() {
           Ergebnisse für "{query}"
         </h2>
 
-        {filteredElements.length === 0 && filteredRelations.length === 0 && (
-          <div className="text-gray-300">Keine Treffer gefunden.</div>
-        )}
+        <ul className="space-y-1">
+          {filtered.map((res, i) => (
+            <li
+              key={i}
+              className="p-2 bg-gray-700/70 rounded cursor-pointer hover:bg-gray-600/70"
+              onClick={() => {
+                if (res.kind === "element") {
+                  setSelectedItem(res.original);
+                } else if (res.original?.parentElement) {
+                  setSelectedItem(res.original.parentElement);
+                } else {
+                  setSelectedItem(res.original);
+                }
+              }}
+            >
+              <strong>{res.name}</strong>
+              <span className="text-gray-300"> — {res.kind}</span>
 
-        {filteredElements.length > 0 && (
-          <>
-            <h3 className="text-sm font-semibold mt-4 mb-2">Elemente</h3>
-            <ul className="space-y-1">
-              {filteredElements.map((e, i) => (
-                <li
-                  key={i}
-                  className="p-2 bg-gray-700/70 rounded cursor-pointer hover:bg-gray-600/70"
-                  onClick={() => setSelectedItem(e)}
-                >
-                  <strong>{e.name}</strong> – {e.type.replace("uml:", "")}
-                </li>
-              ))}
-            </ul>
-          </>
-        )}
-
-        {filteredRelations.length > 0 && (
-          <>
-            <h3 className="text-sm font-semibold mt-4 mb-2">Beziehungen</h3>
-            <ul className="space-y-1 mb-4">
-              {filteredRelations.map((r, i) => (
-                <li
-                  key={i}
-                  className="p-2 bg-gray-700/70 rounded cursor-pointer hover:bg-gray-600/70"
-                  onClick={() => setSelectedItem(r)}
-                >
-                  {r.source} → {r.target} ({r.type})
-                </li>
-              ))}
-            </ul>
-          </>
-        )}
+              {res.parent && (
+                <span className="text-gray-400">
+                  {" "}
+                  (in {searchIndex.find((x) => x.id === res.parent)?.name})
+                </span>
+              )}
+            </li>
+          ))}
+        </ul>
       </div>
 
       {/* Modal */}

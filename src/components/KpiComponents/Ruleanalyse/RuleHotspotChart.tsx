@@ -15,7 +15,9 @@ import { useTheme } from "next-themes";
 import { useChartZoom } from "@/hooks/useChartZoom";
 import { useRef, useState } from "react";
 import { useChartBackground } from "@/hooks/useChartBackground";
+import { translations } from "@/lib/i18n";
 import * as d3 from "d3";
+import { useLanguage } from "@/hooks/useLanguage";
 
 export default function RuleHotspotChart({
   hotspots,
@@ -29,6 +31,7 @@ export default function RuleHotspotChart({
   const svgRef = useRef<SVGSVGElement | null>(null);
   const [transform, setTransform] = useState(d3.zoomIdentity);
   const chartBackground = useChartBackground();
+  const { language } = useLanguage();
   // Farbskala nach Intensität
   const getColor = (value: number) => {
     if (value > 10) return "#ef4444"; // rot
@@ -42,7 +45,7 @@ export default function RuleHotspotChart({
       <div className="flex justify-between items-center mb-2">
         <h2 className="text-md font-semibold text-gray-800 dark:text-gray-100 flex items-center gap-2">
           <Flame className="h-5 w-5" style={{ color: accent }} />
-          Regel-Hotspots im Modell
+          {translations[language].ruleHotspot}{" "}
         </h2>
       </div>
 
@@ -136,8 +139,7 @@ export default function RuleHotspotChart({
       </div>
 
       <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-        Zeigt, in welchen Modellbereichen (Paketen/Subsystemen) die meisten
-        Regelverstöße auftreten.
+        {translations[language].ruleHotspotLegend}
       </p>
     </section>
   );

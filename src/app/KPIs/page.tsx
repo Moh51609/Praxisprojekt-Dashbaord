@@ -109,6 +109,7 @@ export default function KPIs() {
   const [relations, setRelations] = useState<any[]>([]);
   const [section, setSection] = useState("structure");
   const { rules, error: rulesError } = useModelRules(data);
+  const { language } = useLanguage();
   const hotspots = useMemo(
     () => (data ? analyzeRuleHotspots(data) : []),
     [data]
@@ -230,59 +231,61 @@ export default function KPIs() {
             {section === "structure" && (
               <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
                 <Construction className="h-5 w-5 text-accent" />{" "}
-                Strukturqualität
+                {translations[language].structureQualitiy}
               </h2>
             )}
             {section === "rules" && (
               <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                <Settings className="h-5 w-5 text-accent" /> Regeln
+                <Settings className="h-5 w-5 text-accent" />{" "}
+                {translations[language].rules}
                 <Tooltip>
                   <TooltipTrigger>
                     <Info className="h-4 w-4 text-gray-500 hover:text-gray-800 dark:text-gray-300 cursor-pointer" />
                   </TooltipTrigger>
                   <TooltipContent className="max-w-xs text-xs bg-gray-700">
                     Regeln: <br />
-                    <br /> R1 - Blöcke ohne Ports
-                    <br /> R2 - Leere Packages
-                    <br /> R3 - Unbenannte Elemente
-                    <br /> R4 - Ungültige Namenskonvention
-                    <br /> R5 - Isolierte Elemente
-                    <br /> R6 - Ungültige Connector-Enden
-                    <br /> R7 - Requirement ohne Satisfy
+                    <br /> R1 - {translations[language].r1}
+                    <br /> R2 - {translations[language].r2}
+                    <br /> R3 - {translations[language].r3}
+                    <br /> R4 - {translations[language].r4}
+                    <br /> R5 - {translations[language].r5}
+                    <br /> R6 - {translations[language].r6}
+                    <br /> R7 - {translations[language].r7}
                   </TooltipContent>
                 </Tooltip>
               </h2>
             )}
             {section === "coverage" && (
               <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                <PaintRoller className="h-5 w-5 text-accent" /> Abdeckung
+                <PaintRoller className="h-5 w-5 text-accent" />{" "}
+                {translations[language].coverage}
               </h2>
             )}
             {section === "smells" && (
               <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
                 <MessageCircleWarning className="h-5 w-5 text-accent" />{" "}
-                Mögliche Probleme
+                {translations[language].possibleProblems}{" "}
                 <Tooltip>
                   <TooltipTrigger>
                     <Info className="h-4 w-4 text-gray-500 hover:text-gray-800 dark:text-gray-300 cursor-pointer" />
                   </TooltipTrigger>
                   <TooltipContent className="max-w-xs text-xs bg-gray-700">
                     Smells: <br />
-                    <br /> S1 - Deep Nesting
-                    <br /> S2 - Large Package
-                    <br /> S3 - Massive Block
-                    <br /> S4 - Duplicate Names
-                    <br /> S5 - Similar Names
-                    <br /> S6 - Unreferenced Requirement
-                    <br /> S7 - Dead Connector
-                    <br /> S8 - Empty Diagram
-                    <br /> S9 - Overloaded Diagram
-                    <br /> S10 - Long Element Names
-                    <br /> S11 - Model Depth Imbalance
-                    <br /> S12 - Redundant Relation
-                    <br /> S13 - Unused Port
-                    <br /> S14 - Requirement without Verification
-                    <br /> S15 - Element Without Stereotype
+                    <br /> S1 - {translations[language].s1}
+                    <br /> S2 - {translations[language].s2}
+                    <br /> S3 -{translations[language].s3}
+                    <br /> S4 - {translations[language].s4}
+                    <br /> S5 - {translations[language].s5}
+                    <br /> S6 - {translations[language].s6}
+                    <br /> S7 - {translations[language].s7}
+                    <br /> S8 -{translations[language].s8}
+                    <br /> S9 - {translations[language].s9}
+                    <br /> S10 - {translations[language].s10}
+                    <br /> S11 - {translations[language].s11}
+                    <br /> S12 - {translations[language].s12}
+                    <br /> S13 - {translations[language].s13}
+                    <br /> S14 - {translations[language].s14}
+                    <br /> S15 - {translations[language].s15}
                   </TooltipContent>
                 </Tooltip>
               </h2>
@@ -293,10 +296,18 @@ export default function KPIs() {
                 <SelectValue placeholder="Sektion auswählen" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="structure">🧩 Strukturqualität</SelectItem>
-                <SelectItem value="rules">⚙️ Regelanalyse</SelectItem>
-                <SelectItem value="coverage">🎯 Abdeckungsanalyse</SelectItem>
-                <SelectItem value="smells">💨 Model Smells</SelectItem>
+                <SelectItem value="structure">
+                  🧩 {translations[language].structureQualitiy}
+                </SelectItem>
+                <SelectItem value="rules">
+                  ⚙️ {translations[language].ruleAnalysis}
+                </SelectItem>
+                <SelectItem value="coverage">
+                  🎯 {translations[language].coverageAnalysis}
+                </SelectItem>
+                <SelectItem value="smells">
+                  💨 {translations[language].modelSmells}
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>

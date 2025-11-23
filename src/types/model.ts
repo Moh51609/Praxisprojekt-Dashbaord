@@ -1,3 +1,18 @@
+export interface UmlAttribute {
+  id: string;
+  name: string;
+  type?: string;
+  default?: string;
+}
+
+export interface UmlPort {
+  id: string;
+  name: string;
+  direction?: string; // in, out, inout
+  type?: string;
+  multiplicity?: string;
+}
+
 export type UmlElement = {
   id: string;
   name?: string;
@@ -6,6 +21,10 @@ export type UmlElement = {
   package?: string;
   depth?: number;
   direction?: string;
+  incoming?: string[];
+  outgoing?: string[];
+  attributes?: UmlAttribute[];
+  ports?: UmlPort[];
 };
 
 export type UmlRelationship = {
@@ -52,8 +71,6 @@ export type Metrics = {
   portDirectionIssues?: number;
   redundantElements?: number;
   generalIssues?: number;
-
-  // NEU (aus classStats abgeleitet)
 };
 
 export interface QualityMetrics {
@@ -67,6 +84,15 @@ export interface QualityMetrics {
   emptyPackages: number;
 }
 
+export type SearchIndexItem = {
+  id: string;
+  name: string;
+  type: string;
+  kind: "element" | "attribute" | "port" | "relationship";
+  parent: string | null;
+  original: any;
+};
+
 export type ParsedModel = {
   elements: UmlElement[];
   relationships: UmlRelationship[];
@@ -79,4 +105,5 @@ export type ParsedModel = {
   diagramList: DiagramInfo[];
   classStats: ClassStat[];
   quality?: QualityMetrics;
+  searchIndex?: SearchIndexItem[];
 };

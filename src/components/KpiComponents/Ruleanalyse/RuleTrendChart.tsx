@@ -17,6 +17,9 @@ import { useChartBackground } from "@/hooks/useChartBackground";
 import { useEffect, useRef, useState } from "react";
 import * as d3 from "d3";
 import { useChartZoom } from "@/hooks/useChartZoom";
+import { translations } from "@/lib/i18n";
+import { useLanguage } from "@/hooks/useLanguage";
+
 export default function RuleTrendChart({
   history = [
     { date: "01.10", violations: 42 },
@@ -34,6 +37,7 @@ export default function RuleTrendChart({
   const svgRef = useRef<SVGSVGElement | null>(null);
   const [transform, setTransform] = useState(d3.zoomIdentity);
   const chartZoom = useChartZoom();
+  const { language } = useLanguage();
 
   useEffect(() => {
     if (!svgRef.current || !chartZoom) return;
@@ -59,7 +63,7 @@ export default function RuleTrendChart({
       <div className="flex justify-between items-center mb-2">
         <h2 className="text-md font-semibold text-gray-800 dark:text-gray-100 flex items-center gap-2">
           <Activity className="h-5 w-5" style={{ color: accent }} />
-          Qualitäts-Trend
+          {translations[language].qualityTrend}
         </h2>
       </div>
 

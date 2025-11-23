@@ -94,8 +94,7 @@ export default function RuleViolationsByCategoryChart({
       <div className="flex flex-row justify-between items-center mb-4">
         <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100 flex items-center gap-2">
           <ChartBar className="h-5 w-5" style={{ color: accentColor }} />
-          {translations[language].ruleViolationsByCategory ||
-            "Regelverstöße nach Kategorie"}
+          {translations[language].ruleViolationsByCategory}
         </h2>
       </div>
 

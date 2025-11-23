@@ -210,7 +210,7 @@ export default function RuleViolationTable({
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-lg font-semibold flex items-center gap-2 text-gray-800 dark:text-gray-100">
           <Layers className="h-5 w-5" style={{ color: accentColor }} />
-          Regelverstöße
+          {translations[language].ruleViolations}
         </h2>
 
         <div className="flex items-center gap-2">
@@ -226,7 +226,9 @@ export default function RuleViolationTable({
               <SelectValue placeholder="Regel filtern" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Alle Regeln anzeigen</SelectItem>
+              <SelectItem value="all">
+                {translations[language].showAllRules}
+              </SelectItem>
               {rules.map((r) => (
                 <SelectItem key={r.id} value={r.id}>
                   {r.id} – {r.name}
@@ -242,11 +244,11 @@ export default function RuleViolationTable({
         <Table>
           <TableHeader>
             <TableRow className="border-b border-gray-200 dark:border-gray-700">
-              <TableHead>Regel</TableHead>
-              <TableHead>Element</TableHead>
-              <TableHead>Package Pfad</TableHead>
-              <TableHead>Beschreibung</TableHead>
-              <TableHead>Schwere</TableHead>
+              <TableHead>{translations[language].rule}</TableHead>
+              <TableHead>{translations[language].element}</TableHead>
+              <TableHead>{translations[language].packagePath}</TableHead>
+              <TableHead>{translations[language].desc}</TableHead>
+              <TableHead>{translations[language].severity}</TableHead>
             </TableRow>
           </TableHeader>
 

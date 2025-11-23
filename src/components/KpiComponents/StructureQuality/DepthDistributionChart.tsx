@@ -17,6 +17,8 @@ import { useAccentColor } from "@/hooks/useAccentColor";
 import { useChartBackground } from "@/hooks/useChartBackground";
 import { LineChart as LineChartIcon } from "lucide-react";
 import { useChartZoom } from "@/hooks/useChartZoom";
+import { translations } from "@/lib/i18n";
+import { useLanguage } from "@/hooks/useLanguage";
 
 export default function DepthDistributionDensityChart({ data }: { data: any }) {
   const accentColor = useAccentColor();
@@ -26,6 +28,7 @@ export default function DepthDistributionDensityChart({ data }: { data: any }) {
   const chartZoom = useChartZoom();
   const svgRef = useRef<SVGSVGElement | null>(null);
   const [transform, setTransform] = useState(d3.zoomIdentity);
+  const { language } = useLanguage();
 
   // 🔹 Gruppiere Elemente nach Tiefe
   const depthCounts: Record<number, number> = {};
@@ -72,7 +75,7 @@ export default function DepthDistributionDensityChart({ data }: { data: any }) {
       <div className="flex justify-between mb-4 items-center">
         <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100 flex items-center gap-2">
           <LineChartIcon className="h-5 w-5" style={{ color: accentColor }} />
-          Tiefenverteilung
+          {translations[language].depthDistribution}
         </h2>
       </div>
 
@@ -212,8 +215,7 @@ export default function DepthDistributionDensityChart({ data }: { data: any }) {
 
       {/* 🔹 Legende */}
       <p className="text-xs text-gray-500 mt-2 dark:text-gray-300">
-        Zeigt, wie viele Elemente sich auf jeder Hierarchieebene befinden. Der
-        rote Strich markiert die durchschnittliche Tiefe des Modells.
+        {translations[language].depthDistributionLegend}
       </p>
     </section>
   );

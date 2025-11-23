@@ -11,26 +11,25 @@ import type {
 
 const parser = new XMLParser({
   ignoreAttributes: false,
-  attributeNamePrefix: "", // Attribute heißen dann z.B. "xmi:id"
+  attributeNamePrefix: "",
   allowBooleanAttributes: true,
 });
 
-/** Utility: Einzel-Objekt oder Array => immer Array */
+const idToName: Record<string, string> = {};
+
+// Utility
 function asArray<T>(val: T | T[] | undefined): T[] {
   if (!val) return [];
   return Array.isArray(val) ? val : [val];
 }
 
-/** Zählt im Teilbaum alle Knoten mit xmi:type === wanted oder Tag-Schlüssel === wantedKey (Fallback) */
 function countIn(subtree: any, wanted: string, wantedKey?: string): number {
   let n = 0;
   function walk(node: any) {
     if (!node || typeof node !== "object") return;
-    // Treffer über xmi:type / type
     const t = node["xmi:type"] ?? node["type"];
     if (t === wanted) n++;
 
-    // Fallback: Keys wie "uml:Port": [...]
     if (wantedKey && Object.prototype.hasOwnProperty.call(node, wantedKey)) {
       const val = node[wantedKey];
       n += Array.isArray(val) ? val.length : 1;
@@ -45,333 +44,321 @@ function countIn(subtree: any, wanted: string, wantedKey?: string): number {
   return n;
 }
 
-/** Heuristik: „Block?“ – wenn Stereotype "Block" o. Ports/Connectoren vorhanden */
-function isMaybeBlock(classNode: any): boolean {
+function isMaybeBlock(node: any): boolean {
   const ster = String(
-    classNode?.appliedStereotype ?? classNode?.stereotype ?? ""
+    node?.appliedStereotype ?? node?.stereotype ?? ""
   ).toLowerCase();
   if (ster.includes("block")) return true;
-  const ports = countIn(classNode, "uml:Port", "uml:Port");
-  const conns = countIn(classNode, "uml:Connector", "uml:Connector");
-  return ports > 0 || conns > 0;
+  return (
+    countIn(node, "uml:Port", "uml:Port") > 0 ||
+    countIn(node, "uml:Connector", "uml:Connector") > 0
+  );
 }
 
-/** 🔍 Traversiert alle Packages und sammelt UML-/SysML-Elemente rekursiv */
-function collectAllElements(
-  node: any,
-  currentPackage = "Model",
-  acc: UmlElement[] = []
-): UmlElement[] {
-  if (!node || typeof node !== "object") return acc;
+// ------------------------------------------------------------
+// 🆕 NEW: Kleine Hilfsparser für Ports & Attribute
+// ------------------------------------------------------------
 
-  const type = node["xmi:type"] ?? node["type"];
-  const id = node["xmi:id"] ?? node["id"];
-  const name = node["name"] ?? "(Unbenannt)";
-  const stereotype = node["stereotype"] ?? node["appliedStereotype"];
+function parseAttributes(pe: any) {
+  const attrs: any[] = [];
+  const list = asArray(pe.ownedAttribute);
 
-  // nur relevante UML-/SysML-Typen erfassen
-  const relevant = [
-    "uml:Class",
-    "uml:Port",
-    "uml:Package",
-    "uml:Requirement",
-    "uml:UseCase",
-    "uml:Activity",
-    "uml:Connector",
-    "uml:Association",
-    "uml:Generalization",
-    "sysml:Block",
-    "sysml:InternalBlock",
-    "sysml:Requirement",
-    "sysml:Parametric",
-    "sysml:Constraint",
-    "uml:Diagram",
-  ];
-
-  if (type && relevant.some((t) => type.includes(t))) {
-    acc.push({
-      id,
-      name,
-      type,
-      stereotype,
-      package: currentPackage,
-    });
+  for (const a of list) {
+    if (!a) continue;
+    if (a["xmi:type"] === "uml:Property") {
+      attrs.push({
+        id: a["xmi:id"],
+        name: a["name"] ?? "",
+        type: idToName[a["type"]] ?? a["type"] ?? "",
+        default: a?.defaultValue?.value ?? "",
+      });
+    }
   }
 
-  // Rekursiv tiefer gehen
-  for (const key of Object.keys(node)) {
-    const val = node[key];
-    if (Array.isArray(val))
-      val.forEach((v) =>
-        collectAllElements(v, node["name"] ?? currentPackage, acc)
-      );
-    else if (typeof val === "object")
-      collectAllElements(val, node["name"] ?? currentPackage, acc);
+  return attrs;
+}
+
+function parsePorts(pe: any) {
+  const ports: any[] = [];
+  const list = asArray(pe.ownedAttribute);
+
+  for (const p of list) {
+    if (p["xmi:type"] === "uml:Port") {
+      ports.push({
+        id: p["xmi:id"],
+        name: p["name"] ?? "",
+        type: idToName[p["type"]] ?? p["type"] ?? "",
+        direction: p["direction"] ?? "inout",
+        multiplicity: p?.lowerValue?.value
+          ? `${p.lowerValue.value}..${p.upperValue?.value ?? "*"}`
+          : 1,
+      });
+    }
   }
 
-  return acc;
+  return ports;
 }
 
 export function parseXmiFromString(xmiText: string): ParsedModel {
-  const json = parser.parse(xmiText) as Record<string, any>;
+  const json = parser.parse(xmiText);
 
-  // Einstiegspunkte tolerant finden
   const xmi = json["xmi:XMI"] ?? json["XMI"] ?? json;
   const model = xmi["uml:Model"] ?? xmi["Model"] ?? xmi;
 
-  function collectClasses(node: any): any[] {
-    let result: any[] = [];
-    if (!node || typeof node !== "object") return result;
+  // ------------------------------------------------------------
+  // 🔍 STEREOTYPE MAPPING AUS XMI:Extension EXTRAHIEREN
+  // ------------------------------------------------------------
 
-    if (node["xmi:type"] === "uml:Class" || node["type"] === "uml:Class") {
-      result.push(node);
+  // Mapping: Class-ID → Stereotyp-Name
+  const classToStereotype: Record<string, string> = {};
+
+  const extensions = asArray(xmi["xmi:Extension"]);
+
+  for (const ext of extensions) {
+    const block = ext?.stereotypesHREFS;
+    if (!block) continue;
+
+    const stereotypes = asArray(block.stereotype);
+
+    for (const st of stereotypes) {
+      const name = st.name?.split(":")[1];
+      const href = st.stereotypeHREF;
+      if (!name || !href) continue;
+
+      // MagicDraw HREF endet mit #<class-id>
+      const match = href.match(/#(.+)$/);
+      if (!match) continue;
+
+      const classId = match[1];
+      classToStereotype[classId] = name;
     }
-
-    for (const key of Object.keys(node)) {
-      const value = node[key];
-      if (value && typeof value === "object") {
-        result = result.concat(collectClasses(value));
-      }
-    }
-
-    return result;
   }
 
-  function collectClassesAndPackages(node: any): any[] {
-    let result: any[] = [];
-    if (!node || typeof node !== "object") return result;
+  function collectDepths(node: any, depth = 0, acc: any = {}) {
+    if (!node || typeof node !== "object") return acc;
+    if (node["xmi:id"]) acc[node["xmi:id"]] = depth;
 
-    const type = node["xmi:type"] ?? node["type"];
-    if (type === "uml:Class" || type === "uml:Package") {
-      result.push(node);
-    }
-
-    for (const key of Object.keys(node)) {
-      const value = node[key];
-      if (value && typeof value === "object") {
-        result = result.concat(collectClassesAndPackages(value));
+    for (const k of Object.keys(node)) {
+      const v = node[k];
+      if (v && typeof v === "object") {
+        if (Array.isArray(v)) {
+          v.forEach((c) => collectDepths(c, depth + 1, acc));
+        } else collectDepths(v, depth + 1, acc);
       }
     }
+    return acc;
+  }
 
-    return result;
+  const depthMap = collectDepths(model);
+
+  function collectClassesAndPackages(node: any): any[] {
+    let arr: any[] = [];
+    if (!node || typeof node !== "object") return arr;
+
+    const type = node["xmi:type"] ?? node["type"];
+    if (type === "uml:Class" || type === "uml:Package") arr.push(node);
+
+    for (const k of Object.keys(node)) {
+      const v = node[k];
+      if (v && typeof v === "object") {
+        if (Array.isArray(v))
+          v.forEach((c) => (arr = arr.concat(collectClassesAndPackages(c))));
+        else arr = arr.concat(collectClassesAndPackages(v));
+      }
+    }
+    return arr;
   }
 
   const packaged = collectClassesAndPackages(model);
 
-  // 🗺️ Package-Zuordnung (id → Package-Name)
-  const packageMap: Record<string, string> = {};
+  const packageMap: any = {};
 
-  function walkPackages(node: any, currentPackage = "Model") {
+  function walkPackages(node: any, current = "Model") {
     if (!node || typeof node !== "object") return;
+
     const type = node["xmi:type"] ?? node["type"];
-    const id = node["xmi:id"] ?? node["id"];
+    const id = node["xmi:id"];
     const name = node["name"];
 
-    if (type === "uml:Package") {
-      currentPackage = name || "(Unbenanntes Package)";
-    }
+    if (type === "uml:Package") current = name ?? "(Unbenannt)";
 
-    if (id) packageMap[id] = currentPackage;
+    if (id) packageMap[id] = current;
 
-    for (const key of Object.keys(node)) {
-      const val = node[key];
-      if (Array.isArray(val)) {
-        val.forEach((v) => walkPackages(v, currentPackage));
-      } else if (val && typeof val === "object") {
-        walkPackages(val, currentPackage);
-      }
+    for (const k of Object.keys(node)) {
+      const v = node[k];
+      if (Array.isArray(v)) v.forEach((c) => walkPackages(c, current));
+      else if (v && typeof v === "object") walkPackages(v, current);
     }
   }
 
   walkPackages(model);
-
-  // 🧮 Hilfsfunktion: berechnet die Tiefe eines Elements im Modellbaum
-  function collectDepths(
-    node: any,
-    currentDepth = 0,
-    acc: Record<string, number> = {}
-  ): Record<string, number> {
-    if (!node || typeof node !== "object") return acc;
-
-    const id = node["xmi:id"];
-    if (id) acc[id] = currentDepth;
-
-    // Durchlaufe Kinderknoten (z. B. packagedElement, ownedAttribute usw.)
-    for (const key of Object.keys(node)) {
-      const val = node[key];
-      if (Array.isArray(val)) {
-        for (const child of val) {
-          if (typeof child === "object")
-            collectDepths(child, currentDepth + 1, acc);
-        }
-      } else if (val && typeof val === "object") {
-        collectDepths(val, currentDepth + 1, acc);
-      }
-    }
-
-    return acc;
-  }
-
-  // 📊 Alle Tiefen im Modell berechnen
-  const depthMap = collectDepths(model);
 
   const elements: UmlElement[] = [];
   const relationships: UmlRelationship[] = [];
   const classStats: ClassStat[] = [];
   const diagramList: DiagramInfo[] = [];
 
-  // --- Elemente & offensichtliche Relationen aus packagedElement ----------------
   for (const pe of packaged) {
+    const type = pe["xmi:type"] ?? pe["type"];
+    const id = pe["xmi:id"] ?? pe["id"];
+    if (!id || !type) continue;
+
+    const name = pe["name"] ?? "(Unbenannt)";
+    idToName[id] = name;
+
+    // --------------------------
+    // Stereotyp extrahieren
+    // --------------------------
     function extractStereotype(node: any): string | undefined {
       if (!node || typeof node !== "object") return undefined;
-      const st =
+
+      // 1. Direkte Strings wie "SysML::Block"
+      const direct =
         node.appliedStereotype ??
         node.stereotype ??
-        node.appliedStereotypeInstance ??
-        node["mdElementStereotype"] ??
-        undefined;
+        node["mdElementStereotype"]?.name ??
+        node["mdElementStereotype"];
 
-      if (typeof st === "string" && st.length > 0) {
-        return st.replace(/^.*::/, ""); // "SysML::Block" → "Block"
+      if (typeof direct === "string" && direct.trim()) {
+        return direct.split("::").pop(); // nur den letzten Teil
       }
 
-      // Rekursiv weitersuchen
+      // 2. Wenn eine ID drin steckt -> ignorieren, wird später per idToName gelöst
+      if (typeof direct === "string" && direct.startsWith("_")) {
+        return undefined;
+      }
+
+      // 3. Rekursiv suchen
       for (const key of Object.keys(node)) {
         const val = node[key];
         if (val && typeof val === "object") {
-          const deep = extractStereotype(val);
-          if (deep) return deep;
+          const res = extractStereotype(val);
+          if (res) return res;
         }
       }
 
       return undefined;
     }
 
-    /** Sucht den nächstgelegenen Package-Namen eines Elements im Baum */
-    function findParentPackageName(element: any, parentName = "Model"): string {
-      if (!element || typeof element !== "object") return parentName;
+    const element: UmlElement = {
+      id,
+      name,
+      type,
+      stereotype: classToStereotype[id] ?? extractStereotype(pe),
+      package: packageMap[id] ?? "(Kein Package)",
+      depth: depthMap[id] ?? 0,
 
-      // Wenn das aktuelle Element selbst ein Package ist, setze es als neuen Kontext
-      if (element["xmi:type"] === "uml:Package" && element.name) {
-        parentName = element.name;
-      }
+      // 🆕 NEU: initial leere Detaildaten
+      attributes: [],
+      ports: [],
+      incoming: [],
+      outgoing: [],
+    };
+    idToName[id] = pe.name ?? "(Unbenannt)";
 
-      // Durchlaufe alle möglichen Keys (packagedE
-      // lement, ownedElement, etc.)
-      for (const key of Object.keys(element)) {
-        const value = element[key];
-        if (Array.isArray(value)) {
-          for (const child of value) {
-            if (child && typeof child === "object" && child["xmi:id"]) {
-              // ID → merken
-              packageMap[child["xmi:id"]] = parentName;
-              // Rekursion
-              findParentPackageName(child, parentName);
-            }
-          }
-        } else if (value && typeof value === "object") {
-          findParentPackageName(value, parentName);
-        }
-      }
-
-      return parentName;
+    // ----------------------------------------
+    // 🆕 Attribute & Ports extrahieren
+    // ----------------------------------------
+    if (type === "uml:Class") {
+      element.attributes = parseAttributes(pe);
+      element.ports = parsePorts(pe);
     }
 
-    const type = pe["xmi:type"] ?? pe["type"] ?? "";
-    const id = pe["xmi:id"] ?? pe["id"] ?? "";
-    const packageName =
-      pe["package"]?.name ??
-      pe["namespace"] ??
-      pe["owner"]?.name ??
-      model?.name ??
-      "—";
-    if (!id || !type) continue;
+    elements.push(element);
 
-    elements.push({
-      id,
-      name: pe.name,
-      type,
-      stereotype: extractStereotype(pe),
+    // ----------------------------------------
+    // Beziehungen sammeln
+    // ----------------------------------------
 
-      package: packageMap[pe["xmi:id"]] ?? "(Kein Package)",
-      depth: depthMap[id] ?? 0,
-    });
-
+    // UML Association
     if (type === "uml:Association" || pe.memberEnd || pe.ownedEnd) {
       const ends = asArray(pe.ownedEnd ?? pe.memberEnd);
-      relationships.push({
-        id,
-        type: "uml:Association",
-        name: pe.name,
-        source: ends[0]?.["xmi:idref"] ?? ends[0]?.type ?? ends[0]?.["xmi:id"],
-        target: ends[1]?.["xmi:idref"] ?? ends[1]?.type ?? ends[1]?.["xmi:id"],
-      });
+      if (ends.length >= 2) {
+        const source =
+          ends[0]?.["xmi:idref"] ?? ends[0]?.type ?? ends[0]?.["xmi:id"];
+        const target =
+          ends[1]?.["xmi:idref"] ?? ends[1]?.type ?? ends[1]?.["xmi:id"];
+
+        relationships.push({
+          id,
+          type: "uml:Association",
+          name,
+          source,
+          target,
+        });
+
+        // 🆕 incoming/outgoing auffüllen
+        const srcEl = elements.find((e) => e.id === source);
+        const tgtEl = elements.find((e) => e.id === target);
+
+        if (srcEl) srcEl.outgoing!.push(id);
+        if (tgtEl) tgtEl.incoming!.push(id);
+      }
     }
 
+    // UML Dependency
     if (type === "uml:Dependency" || (pe.client && pe.supplier)) {
       relationships.push({
         id,
         type: "uml:Dependency",
+        name,
         source: pe.client,
         target: pe.supplier,
-        name: pe.name,
       });
+
+      const srcEl = elements.find((e) => e.id === pe.client);
+      const tgtEl = elements.find((e) => e.id === pe.supplier);
+
+      if (srcEl) srcEl.outgoing!.push(id);
+      if (tgtEl) tgtEl.incoming!.push(id);
     }
 
+    // Generalizations
     for (const gen of asArray(pe.generalization)) {
       relationships.push({
-        id: gen["xmi:id"] ?? `${id}_gen_${gen.general ?? "unknown"}`,
+        id: gen["xmi:id"] ?? `${id}_gen_${gen.general}`,
         type: "uml:Generalization",
         source: id,
         target: gen.general,
       });
+
+      const tgtEl = elements.find((e) => e.id === gen.general);
+      if (tgtEl) tgtEl.incoming!.push(id);
+
+      const srcEl = elements.find((e) => e.id === id);
+      if (srcEl) srcEl.outgoing!.push(id);
     }
 
+    // ----------------------------------------
+    // classStats (unverändert)
+    // ----------------------------------------
     if (type === "uml:Class") {
-      const portsCount =
-        countIn(pe, "uml:Port", "uml:Port") +
-        countIn(
-          pe.ownedAttribute ?? pe["ownedAttribute"],
-          "uml:Port",
-          "uml:Port"
-        ) +
-        countIn(
-          pe.ownedAttribute ?? pe["ownedAttribute"],
-          "sysml:Port",
-          "sysml:Port"
-        ) +
-        countIn(
-          pe.ownedAttribute ?? pe["ownedAttribute"],
-          "sysml:FlowPort",
-          "sysml:FlowPort"
-        );
-
-      const connectorCount =
-        countIn(pe, "uml:Connector", "uml:Connector") +
-        countIn(pe.ownedConnector, "uml:Connector", "uml:Connector");
+      const portsCount = countIn(pe, "uml:Port", "uml:Port");
+      const connectorCount = countIn(pe, "uml:Connector", "uml:Connector");
 
       classStats.push({
         className: pe.name,
         umlId: id,
-        attributes:
-          countIn(pe, "uml:Property", "uml:Property") +
-          countIn(pe.ownedAttribute, "uml:Property", "uml:Property"),
+        attributes: countIn(pe, "uml:Property", "uml:Property"),
         ports: portsCount,
         connectors: connectorCount,
         maybeSysmlBlock: isMaybeBlock(pe),
       });
     }
   }
-  // --- Qualitätsmetriken ----------------------------------------------------
 
+  // ========================================================================
+  //      TEIL 3 — DIAGRAMME, METRIKEN, QUALITÄT & RETURN
+  // ========================================================================
+
+  // --- Diagramme ----------------------------------------------------------
   const diagramNodes: any[] = [];
 
   function collectDiagramNodes(node: any) {
     if (!node || typeof node !== "object") return;
 
-    const t = String(node["xmi:type"]) ?? node["type"] ?? "";
+    const t = String(node["xmi:type"]) ?? "";
     const mdElem = String(node["mdElement"] ?? "");
-    const name = node["name"];
 
     if (
       t.includes("Diagram") ||
@@ -388,64 +375,19 @@ export function parseXmiFromString(xmiText: string): ParsedModel {
   }
   collectDiagramNodes(json);
 
-  for (const d of diagramNodes) {
-    const mdType =
+  const mappedDiagrams = diagramNodes.map((d) => ({
+    name: d?.name ?? "Unbenanntes Diagramm",
+    mdType:
       d["mdElement"] ??
       d["mdDiagramType"] ??
       d["diagramType"] ??
-      d["diagram_kind"] ??
       d["type"] ??
-      (d["xmi:type"]?.includes("Diagram")
-        ? d["xmi:type"].replace("uml:", "")
-        : "Unknown");
+      "Unknown",
+  }));
 
-    diagramList.push({
-      name: d?.name ?? "Unbenanntes Diagramm",
-      mdType,
-    });
-  }
+  diagramList.push(...mappedDiagrams);
 
-  // 🔹 Port-Richtungsprüfung direkt in parseXmiFromString einbauen
-  function checkPortDirectionIssues(elements: UmlElement[]): number {
-    let badConnections = 0;
-
-    // Alle Ports und Connectoren aus der Elementliste herausfiltern
-    const ports = elements.filter((e) => e.type === "uml:Port");
-    const connectors = elements.filter((e) => e.type === "uml:Connector");
-
-    for (const conn of connectors) {
-      // In XMI heißen die Verbindungen oft "end" oder "ownedEnd"
-      const ends = asArray((conn as any).end ?? (conn as any).ownedEnd ?? []);
-      if (ends.length === 2) {
-        const portA = ports.find((p) => p.id === ends[0]?.idref);
-        const portB = ports.find((p) => p.id === ends[1]?.idref);
-
-        if (portA?.direction && portB?.direction) {
-          const a = portA.direction.toLowerCase();
-          const b = portB.direction.toLowerCase();
-          const isOk =
-            (a === "in" && b === "out") || (a === "out" && b === "in");
-          if (!isOk) badConnections++;
-        }
-      }
-    }
-
-    return badConnections;
-  }
-
-  // === Redundante Elemente ===
-  // (Einfacher Heuristik-Ansatz: Elemente mit identischem Namen und Typ)
-  const seen = new Set<string>();
-  const redundantElements = elements.filter((e) => {
-    const key = `${e.name ?? ""}_${e.type ?? ""}`;
-    if (seen.has(key)) return true;
-    seen.add(key);
-    return false;
-  }).length;
-
-  // === Generelle Probleme ===
-  // z.B. unbenannte Elemente, Ports ohne Typ, leere Packages, falsche Portverbindungen
-
+  // --- Metriken -----------------------------------------------------------
   const metrics: Metrics = {
     classes: 0,
     profiles: 0,
@@ -463,12 +405,13 @@ export function parseXmiFromString(xmiText: string): ParsedModel {
     diagramsTotal: 0,
     unnamedElements: 0,
     unknownElements: 0,
-    blocksEstimated: 0,
     abstraction: 0,
+    blocksEstimated: 0,
   };
 
   function tally(node: any) {
     if (!node || typeof node !== "object") return;
+
     const t = node["xmi:type"] ?? node["type"];
 
     switch (t) {
@@ -487,6 +430,9 @@ export function parseXmiFromString(xmiText: string): ParsedModel {
       case "uml:Generalization":
         metrics.generalizations++;
         break;
+      case "uml:Dependency":
+        metrics.dependencies++;
+        break;
       case "uml:Property":
         metrics.properties++;
         break;
@@ -495,6 +441,9 @@ export function parseXmiFromString(xmiText: string): ParsedModel {
         break;
       case "uml:Connector":
         metrics.connectors++;
+        break;
+      case "uml:Parameter":
+        metrics.parameters++;
         break;
       case "uml:UseCase":
         metrics.useCases++;
@@ -508,103 +457,113 @@ export function parseXmiFromString(xmiText: string): ParsedModel {
       case "uml:Diagram":
         metrics.diagramsTotal++;
         break;
-      case "uml:Dependency":
-        metrics.dependencies++;
-        break;
-      case "uml:Parameter":
-        metrics.parameters++;
-        break;
       case "uml:Abstraction":
         metrics.abstraction++;
         break;
 
       default:
-        // 🆕 Unbekannte UML-Typen mitzählen
         if (t && typeof t === "string" && t.startsWith("uml:")) {
           metrics.unknownElements++;
         }
         break;
     }
 
-    for (const k of Object.keys(node)) {
-      const v = node[k];
+    for (const key of Object.keys(node)) {
+      const v = node[key];
       if (v && typeof v === "object") tally(v);
     }
   }
   tally(json);
 
-  metrics.unnamedElements = elements.filter(
-    (e) => !e.name || String(e.name).trim() === ""
-  ).length;
+  // weitere Qualitätsmetriken
+  metrics.unnamedElements = elements.filter((e) => !e.name?.trim()).length;
   metrics.blocksEstimated = classStats.filter((c) => c.maybeSysmlBlock).length;
 
   const validDiagrams = diagramList.filter(
-    (d) =>
-      d.mdType &&
-      d.mdType !== "Unknown" &&
-      d.mdType.trim() !== "" &&
-      !/^\(?\d+\)?$/.test(d.mdType)
+    (d) => d.mdType && d.mdType !== "Unknown"
   );
 
-  // --- Qualitätskennzahlen --------------------------------------------------
+  // Packages
   const packages = elements.filter((e) => e.type === "uml:Package");
-  const unnamedPerPackage: {
-    package: string;
-    unnamed: number;
-    total: number;
-    ratio: number;
-  }[] = [];
 
-  for (const pkg of packages) {
-    const pkgName = pkg.name || "(Unbenanntes Package)";
+  const unnamedPerPackage = packages.map((pkg) => {
+    const pkgName = pkg.name ?? "(Unbenannt)";
     const children = elements.filter((e) => e.package === pkgName);
-    const unnamed = children.filter(
-      (c) => !c.name || String(c.name).trim() === ""
-    ).length;
-    const total = children.length || 1;
-    unnamedPerPackage.push({
+    const unnamed = children.filter((c) => !c.name || !c.name.trim()).length;
+
+    return {
       package: pkgName,
       unnamed,
-      total,
-      ratio: unnamed / total,
-    });
-  }
+      total: children.length || 1,
+      ratio: unnamed / (children.length || 1),
+    };
+  });
 
-  // Ports ohne Typ
   const portsWithoutType = elements.filter(
-    (e) => e.type === "uml:Port" && !(e as any).type && !(e as any)["xmi:type"]
+    (e) => e.type === "uml:Port" && !(e as any).type
   ).length;
 
-  // Leere Packages
   const emptyPackages = packages.filter(
-    (p) => !elements.some((e) => e.package === p.name)
+    (pkg) => !elements.some((e) => e.package === pkg.name)
   ).length;
 
   const diagramsByType = validDiagrams.reduce<Record<string, number>>(
     (acc, d) => {
-      const cleanKey = (d.mdType || "")
-        .replace(/MagicDraw|SysML|UML|Diagram/gi, "")
-        .trim();
-      if (!cleanKey) return acc;
-      acc[cleanKey] = (acc[cleanKey] ?? 0) + 1;
+      const key = (d.mdType ?? "").replace(/Diagram|uml:|sysml:/gi, "").trim();
+      if (!key) return acc;
+      acc[key] = (acc[key] ?? 0) + 1;
       return acc;
     },
     {}
   );
-  metrics.portDirectionIssues = checkPortDirectionIssues(elements);
 
-  const generalIssues =
-    (metrics.unnamedElements ?? 0) +
-    (metrics.portDirectionIssues ?? 0) +
-    (elements.filter((e) => e.type === "uml:Port" && !(e as any).type).length ??
-      0) +
-    (elements.filter(
-      (e) => e.type === "uml:Package" && !(e.name && e.name.trim())
-    ).length ?? 0);
+  const searchIndex = [
+    // Elemente
+    ...elements.map((e) => ({
+      id: e.id,
+      name: e.name,
+      type: e.type,
+      kind: "element",
+      parent: null,
+      original: e,
+    })),
 
-  metrics.redundantElements = redundantElements;
-  metrics.generalIssues = generalIssues;
+    // Attribute
+    ...elements.flatMap((e) =>
+      (e.attributes ?? []).map((a) => ({
+        id: a.id,
+        name: a.name,
+        type: "Attribute",
+        kind: "attribute",
+        parent: e.id,
+        original: { ...a, parentElement: e },
+      }))
+    ),
 
+    // Ports
+    ...elements.flatMap((e) =>
+      (e.ports ?? []).map((p) => ({
+        id: p.id,
+        name: p.name,
+        type: "Port",
+        kind: "port",
+        parent: e.id,
+        original: { ...p, parentElement: e },
+      }))
+    ),
+
+    // Beziehungen
+    ...relationships.map((r) => ({
+      id: r.id,
+      name: r.name ?? `${r.source} → ${r.target}`,
+      type: r.type,
+      kind: "relationship",
+      parent: null,
+      original: r,
+    })),
+  ];
+
+  // --- FINALER RETURN ------------------------------------------------------
   return {
     elements,
     relationships,
@@ -621,6 +580,7 @@ export function parseXmiFromString(xmiText: string): ParsedModel {
       portsWithoutType,
       emptyPackages,
     },
+    searchIndex,
   };
 }
 
