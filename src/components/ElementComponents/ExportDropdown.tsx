@@ -32,7 +32,6 @@ export default function ExportDropdown({ data }: { data: ParsedModel }) {
 
     // Metrics anhängen
     csv += "\n\n### MODEL METRICS ###\n";
-    csv += `Total Elements, ${metrics.totalElements ?? 0}\n`;
     csv += `Blocks, ${metrics.classes ?? 0}\n`;
     csv += `Ports, ${metrics.ports ?? 0}\n`;
     csv += `Properties, ${metrics.properties ?? 0}\n`;

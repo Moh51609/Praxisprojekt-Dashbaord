@@ -1,8 +1,8 @@
 import { readFileSync } from "fs";
-import { parseDetailXmi } from "@/lib/parseDetailXmi";
+import { parseXmiFromString } from "@/lib/xmi";
 
 export function GET() {
   const xmi = readFileSync("Praktikum3.xml", "utf-8");
-  const parsed = parseDetailXmi(xmi);
+  const parsed = parseXmiFromString(xmi);
   return Response.json(parsed);
 }

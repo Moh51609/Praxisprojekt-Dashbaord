@@ -2,6 +2,13 @@ import { NextResponse } from "next/server";
 import { readFileSync } from "fs";
 import { XMLParser } from "fast-xml-parser";
 
+interface TreeNodeType {
+  id: string;
+  name: string;
+  type: string;
+  children: TreeNodeType[];
+}
+
 const parser = new XMLParser({
   ignoreAttributes: false,
   attributeNamePrefix: "",
@@ -13,7 +20,7 @@ function asArray(v: any) {
   return Array.isArray(v) ? v : v ? [v] : [];
 }
 
-function buildTree(node: any) {
+function buildTree(node: any): TreeNodeType {
   const children = asArray(node.packagedElement);
 
   return {
