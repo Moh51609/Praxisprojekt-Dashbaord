@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import React, { useMemo } from "react";
 
 type UmlPort = {
   id: string;
@@ -19,17 +19,15 @@ export default function BlockPreviewPro({ item }: { item: UmlElement }) {
   if (!item) return null;
 
   const isBlock =
-    item.stereotype?.toLowerCase() === "block" || item.type === "uml:Class"; // optional anpassen
+    item.stereotype?.toLowerCase() === "block" || item.type === "uml:Class";
 
   if (!isBlock) return null;
-
-  const width = 340;
-  const height = 180;
 
   const portsLeft =
     item.ports?.filter(
       (p) => p.direction === "in" || p.direction === "inout"
     ) ?? [];
+
   const portsRight =
     item.ports?.filter(
       (p) => p.direction === "out" || p.direction === "inout"
@@ -37,49 +35,80 @@ export default function BlockPreviewPro({ item }: { item: UmlElement }) {
 
   const portHeight = 22;
   const portPadding = 6;
+  const textPadding = 12;
 
+  // ------------------------------------------------------
+  // 📌 Dynamische Breite bestimmen
+  // ------------------------------------------------------
+  function measure(label: string) {
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return 80;
+    ctx.font = "12px Arial";
+    return ctx.measureText(label).width + textPadding * 2;
+  }
+
+  const maxLeftPortWidth = Math.max(
+    0,
+    ...portsLeft.map((p) => measure("◀ " + p.name))
+  );
+  const maxRightPortWidth = Math.max(
+    0,
+    ...portsRight.map((p) => measure(p.name + " ▶"))
+  );
+
+  const titleWidth = measure(item.name) + 40;
+  const stereotypeWidth = measure("«" + (item.stereotype || "Block") + "»");
+
+  const minBlockWidth = Math.max(
+    maxLeftPortWidth + maxRightPortWidth + 60, // Platz in der Mitte
+    titleWidth,
+    stereotypeWidth,
+    260 // Mindestbreite
+  );
+
+  const svgWidth = minBlockWidth;
+  const svgHeight =
+    100 +
+    Math.max(
+      portsLeft.length * (portHeight + portPadding),
+      portsRight.length * (portHeight + portPadding)
+    );
+
+  // ------------------------------------------------------
+  // 📌 RENDER
+  // ------------------------------------------------------
   return (
-    <div
-      className="relative mx-auto"
-      style={{
-        width: "fit-content", // wichtig
-        maxWidth: "100%", // verhindert Overflow in kleinen Panels
-        overflow: "visible", // damit Ports NICHT abgeschnitten werden
-      }}
-    >
+    <div className="relative mx-auto mt-6" style={{ width: "fit-content" }}>
       <div
-        className="rounded-lg bg-gray-800 p-4 mt-6 shadow-lg items-center flex justify-center"
+        className="rounded-lg shadow-lg p-4"
         style={{
           background: "#F7DE9A",
           padding: "22px",
-          position: "relative",
-          minWidth: "260px",
         }}
       >
-        <svg width={width} height={height}>
-          {/* Block background */}
+        <svg width={svgWidth} height={svgHeight}>
+          {/* Background */}
           <rect
-            x="1"
-            y="1"
-            width={width - 2}
-            height={height - 2}
-            rx="8"
+            x="2"
+            y="2"
+            width={svgWidth - 4}
+            height={svgHeight - 4}
+            rx="10"
             fill="url(#gradYellow)"
-            stroke="#444"
-            strokeWidth="0"
           />
 
           <defs>
             <linearGradient id="gradYellow" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor="#fae7b2" />
-              <stop offset="100%" stopColor="#f5d884" />
+              <stop offset="100%" stopColor="#f3d57f" />
             </linearGradient>
           </defs>
 
-          {/* Block title */}
+          {/* Stereotype */}
           <text
-            x="50%"
-            y="32"
+            x={svgWidth / 2}
+            y={32}
             textAnchor="middle"
             fontSize="16"
             fontWeight="700"
@@ -88,9 +117,10 @@ export default function BlockPreviewPro({ item }: { item: UmlElement }) {
             «{item.stereotype || "Block"}»
           </text>
 
+          {/* Title */}
           <text
-            x="50%"
-            y="55"
+            x={svgWidth / 2}
+            y={58}
             textAnchor="middle"
             fontSize="18"
             fontWeight="600"
@@ -100,50 +130,60 @@ export default function BlockPreviewPro({ item }: { item: UmlElement }) {
           </text>
 
           {/* LEFT PORTS */}
-          {portsLeft.map((p, i) => (
-            <g key={p.id}>
-              <rect
-                x="0"
-                y={70 + i * (portHeight + portPadding)}
-                width="85"
-                height={portHeight}
-                rx="6"
-                fill="#f0f0f0"
-                stroke="#777"
-              />
-              <text
-                x="6"
-                y={70 + i * (portHeight + portPadding) + 15}
-                fontSize="11"
-                fill="#333"
-              >
-                ◀ {p.name}
-              </text>
-            </g>
-          ))}
+          {portsLeft.map((p, i) => {
+            const label = "◀ " + p.name;
+            const width = measure(label);
+
+            return (
+              <g key={p.id}>
+                <rect
+                  x={5}
+                  y={80 + i * (portHeight + portPadding)}
+                  width={width + 10}
+                  height={portHeight}
+                  rx="6"
+                  fill="#ffffff"
+                  stroke="#777"
+                />
+                <text
+                  x={10}
+                  y={80 + i * (portHeight + portPadding) + 15}
+                  fontSize="12"
+                  fill="#333"
+                >
+                  {label}
+                </text>
+              </g>
+            );
+          })}
 
           {/* RIGHT PORTS */}
-          {portsRight.map((p, i) => (
-            <g key={p.id}>
-              <rect
-                x={width - 120}
-                y={70 + i * (portHeight + portPadding)}
-                width="85"
-                height={portHeight}
-                rx="6"
-                fill="#f0f0f0"
-                stroke="#777"
-              />
-              <text
-                x={width - 110}
-                y={70 + i * (portHeight + portPadding) + 15}
-                fontSize="11"
-                fill="#333"
-              >
-                {p.name} ▶
-              </text>
-            </g>
-          ))}
+          {portsRight.map((p, i) => {
+            const label = p.name + " ▶";
+            const width = measure(label);
+
+            return (
+              <g key={p.id}>
+                <rect
+                  x={svgWidth - width - 15}
+                  y={80 + i * (portHeight + portPadding)}
+                  width={width + 10}
+                  height={portHeight}
+                  rx="6"
+                  fill="#ffffff"
+                  stroke="#777"
+                />
+                <text
+                  x={svgWidth - width}
+                  y={80 + i * (portHeight + portPadding) + 15}
+                  fontSize="12"
+                  fill="#333"
+                >
+                  {label}
+                </text>
+              </g>
+            );
+          })}
         </svg>
       </div>
     </div>

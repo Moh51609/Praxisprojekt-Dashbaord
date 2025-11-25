@@ -14,6 +14,14 @@ import {
 import { useAccentColor } from "@/hooks/useAccentColor";
 import { useTheme } from "next-themes";
 
+type ReqBlockPoint = {
+  req: string;
+  block: string;
+  linked: boolean;
+  x: number;
+  y: number;
+};
+
 export default function RequirementTraceabilityMatrix({ data }: { data: any }) {
   const accent = useAccentColor();
   const { theme } = useTheme();
@@ -69,7 +77,7 @@ export default function RequirementTraceabilityMatrix({ data }: { data: any }) {
               dataKey="x"
               type="number"
               domain={[0, blocks.length - 1]}
-              ticks={blocks.map((_, i) => i)}
+              ticks={blocks.map((_: unknown, i: number) => i)}
               tickFormatter={(i) => blocks[i]?.name?.slice(0, 10) ?? ""}
               tick={{
                 fill: theme === "dark" ? "#D1D5DB" : "#111827",
@@ -86,7 +94,7 @@ export default function RequirementTraceabilityMatrix({ data }: { data: any }) {
               dataKey="y"
               type="number"
               domain={[0, requirements.length - 1]}
-              ticks={requirements.map((_, i) => i)}
+              ticks={requirements.map((_: unknown, i: number) => i)}
               tickFormatter={(i) => requirements[i]?.name?.slice(0, 10) ?? ""}
               tick={{
                 fill: theme === "dark" ? "#D1D5DB" : "#111827",
@@ -115,7 +123,7 @@ export default function RequirementTraceabilityMatrix({ data }: { data: any }) {
             <ZAxis range={[150, 150]} />
 
             <Scatter data={matrixData}>
-              {matrixData.map((d, i) => (
+              {matrixData.map((d: ReqBlockPoint, i: number) => (
                 <Cell
                   key={i}
                   fill={d.linked ? linkedColor : missingColor}

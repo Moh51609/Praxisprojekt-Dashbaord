@@ -31,7 +31,7 @@ export default function DetailPanel({ item, onClose }: any) {
           <motion.div
             className="
               fixed right-0 top-0 bottom-0
-              w-[420px]
+              w-[460px]
               bg-gray-900 border-l border-gray-700
               text-white shadow-2xl
               p-6 overflow-y-auto
