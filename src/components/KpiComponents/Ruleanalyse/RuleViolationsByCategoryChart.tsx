@@ -35,7 +35,6 @@ export default function RuleViolationsByCategoryChart({
   const chartBackground = useChartBackground();
   const { language } = useLanguage();
   const chartZoom = useChartZoom();
-
   // 🔹 Kategorien & Gruppierung
   const categoryMap: Record<string, string> = {
     R1: "Struktur",
@@ -78,15 +77,17 @@ export default function RuleViolationsByCategoryChart({
     value,
   }));
 
-  // 🔹 Farben für Balken
-  const barColors = {
+  const barColors: Record<string, string> = {
     Struktur: "#f59e0b",
     Benennung: "#10b981",
     Verbindungen: "#3b82f6",
     Traceability: "#8b5cf6",
     Diagramme: "#ef4444",
     Andere: accentColor,
+    // ...
   };
+
+  // 🔹 Farben für Balken
 
   return (
     <section className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-6 relative">
