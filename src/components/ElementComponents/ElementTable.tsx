@@ -36,7 +36,7 @@ export default function ElementTable({ data }: { data?: ParsedModel | null }) {
     () =>
       Array.from(
         new Set(
-          (data.elements ?? [])
+          (data?.elements ?? [])
             .map((e) => e.type.replace("uml:", ""))
             .filter(Boolean)
         )

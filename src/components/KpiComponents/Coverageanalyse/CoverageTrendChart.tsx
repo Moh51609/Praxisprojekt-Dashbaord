@@ -43,15 +43,19 @@ export default function CoverageTrendChart() {
     if (!svgRef.current || !chartZoom) return;
 
     const svg = d3.select(svgRef.current);
+
     const zoom = d3
       .zoom<SVGSVGElement, unknown>()
-      .scaleExtent([0.5, 3])
+      .scaleExtent([0.5, 3]) // Zoom-Level zwischen 0.5x und 3x
       .on("zoom", (event) => {
         setTransform(event.transform);
       });
 
     svg.call(zoom as any);
-    return () => svg.on(".zoom", null);
+
+    return () => {
+      svg.on(".zoom", null); // Cleanup bei Unmount
+    };
   }, [chartZoom]);
 
   return (
