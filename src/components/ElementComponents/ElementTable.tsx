@@ -46,7 +46,7 @@ export default function ElementTable({ data }: { data?: ParsedModel | null }) {
 
   // 🔹 Gefilterte Elemente berechnen
   const filtered = useMemo(() => {
-    return (data.elements ?? []).filter((e) => {
+    return (data?.elements ?? []).filter((e) => {
       const matchType =
         filterType === "all" || e.type.replace("uml:", "") === filterType;
       const matchStereo =
@@ -115,7 +115,7 @@ export default function ElementTable({ data }: { data?: ParsedModel | null }) {
           <TableBody>
             {currentItems.length > 0 ? (
               currentItems.map((e, i) => {
-                const stats = data.classStats.find(
+                const stats = data?.classStats.find(
                   (c) => c.className === e.name
                 );
                 return (
