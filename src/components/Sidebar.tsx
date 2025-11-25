@@ -10,16 +10,20 @@ import {
   Bug,
   Search,
   ArrowRightFromLine,
+  Delete,
+  X,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useAccentColor } from "@/hooks/useAccentColor";
 import { useLanguage } from "@/hooks/useLanguage";
 import { translations } from "@/lib/i18n";
+import { useState } from "react";
 
 export default function Sidebar() {
   const accentColor = useAccentColor();
   const pathname = usePathname();
   const { language } = useLanguage();
+  const [query, setQuery] = useState("");
 
   return (
     <nav className="flex h-full flex-col gap-2 p-4 ">
@@ -70,23 +74,41 @@ export default function Sidebar() {
           active={pathname === "/validationSuits"}
         />
         <div className="px-2 mt-2">
-          <div className="flex items-center gap-2 bg-gray-100 dark:bg-gray-700 rounded-lg px-2 py-2">
+          <div className="flex items-center gap-2 bg-gray-100 dark:bg-gray-700 rounded-lg px-2 py-2 relative">
             <Search className="text-gray-500" size={16} />
+
             <input
               type="text"
               placeholder="Suche..."
+              value={query}
               className="bg-transparent w-full outline-none text-sm dark:text-white"
               onChange={(e) => {
                 const value = e.target.value;
-                console.log("Sending Search:", value);
+                setQuery(value);
 
                 window.dispatchEvent(
                   new CustomEvent("global-search", { detail: value })
                 );
               }}
             />
+
+            {/* ❌ CLEAR BUTTON */}
+            {query.length > 0 && (
+              <button
+                onClick={() => {
+                  setQuery("");
+                  window.dispatchEvent(
+                    new CustomEvent("global-search", { detail: "" })
+                  );
+                }}
+                className="absolute right-2 text-gray-400 hover:text-gray-600"
+              >
+                <X size={16} />
+              </button>
+            )}
           </div>
         </div>
+
         <div>
           <button
             onClick={() => window.dispatchEvent(new CustomEvent("toggle-tree"))}

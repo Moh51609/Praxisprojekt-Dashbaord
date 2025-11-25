@@ -54,13 +54,13 @@ export default function RuleDependencyChordChart({ rules }: { rules: any[] }) {
       .selectAll("path")
       .data(chord)
       .join("path")
-      .attr("d", d3.ribbonArrow().radius(innerRadius - 10))
+      .attr("d", d3.ribbonArrow() as any)
       .style("fill", (d) => colorScale(rules[d.target.index].id))
-      .style(
-        "stroke",
-        (d) =>
-          d3.color(colorScale(rules[d.target.index].id))?.darker(1) as string
-      )
+      .style("stroke", (d: any) => {
+        const c = d3.color(colorScale(rules[d.target.index].id));
+        return c ? d3.rgb(c).darker(1).formatHex() : "#000000";
+      })
+
       .style("opacity", 0.75);
 
     // 🔹 Outer rule labels

@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import SearchResultModal from "./SearchResultModal";
+import { useEffect, useRef, useState } from "react";
 import DetailPanel from "./DetailPanel";
 
 export default function SearchOverlay() {
@@ -10,6 +9,7 @@ export default function SearchOverlay() {
 
   const [showResults, setShowResults] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
+  const resultsRef = useRef<HTMLDivElement>(null);
 
   // Daten laden
   useEffect(() => {
@@ -18,6 +18,20 @@ export default function SearchOverlay() {
       .then((j) => {
         setSearchIndex(j.searchIndex ?? []);
       });
+  }, []);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (
+        resultsRef.current &&
+        !resultsRef.current.contains(e.target as Node)
+      ) {
+        setShowResults(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   // Sucheingabe Listener
@@ -44,6 +58,7 @@ export default function SearchOverlay() {
     <>
       {/* Kleine SUCHBOX direkt neben Sidebar */}
       <div
+        ref={resultsRef}
         className={`
          fixed 
     top-[340px] 
