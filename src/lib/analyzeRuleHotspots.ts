@@ -30,11 +30,9 @@ export function analyzeRuleHotspots(data: ParsedModel, relations: any[] = []) {
    * R2 – Leere Packages
    * ============================ */
   const emptyPackages =
-    data.packages?.filter((p) => (p.elements ?? []).length === 0) ?? [];
-  emptyPackages.forEach((p) => {
-    const pkg = p.name || getPackageName(p);
-    packageViolations[pkg] = (packageViolations[pkg] ?? 0) + 1;
-  });
+    data.packages?.filter(
+      (p) => !data.elements.some((el) => el.package === p.name)
+    ) ?? [];
 
   /** ============================
    * R3 – Unbenannte Elemente

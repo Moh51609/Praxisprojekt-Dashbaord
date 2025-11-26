@@ -27,7 +27,7 @@ export default function RelationsGraph({ data }: { data: any[] }) {
   const { language } = useLanguage();
   // const bgColor = theme === "dark" ? "#374151" : "#e5e7eb";
   const containerRef = useRef<HTMLDivElement>(null);
-  const graphRef = useRef<ForceGraphMethods>();
+  const graphRef = useRef<any>(null);
 
   const [size, setSize] = useState({ width: 0, height: 600 });
   const chartZoom = useChartZoom();

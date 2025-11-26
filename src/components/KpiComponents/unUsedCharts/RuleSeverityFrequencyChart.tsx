@@ -50,8 +50,7 @@ export default function RuleSeverityFrequencyChart({
       <div className="flex flex-row justify-between items-center mb-4">
         <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100 flex items-center gap-2">
           <AlertTriangle className="h-5 w-5" style={{ color: accentColor }} />
-          {translations[language].severityFrequency ||
-            "Schweregrad vs. Häufigkeit"}
+          "Schweregrad vs. Häufigkeit"
         </h2>
       </div>
 
@@ -131,8 +130,8 @@ export default function RuleSeverityFrequencyChart({
       </ResponsiveContainer>
 
       <p className="text-xs text-gray-500 dark:text-gray-300 mt-3 text-center">
-        {translations[language].severityFrequencyDesc ||
-          "Zeigt den Zusammenhang zwischen Häufigkeit und Schweregrad von Regelverstößen."}
+        "Zeigt den Zusammenhang zwischen Häufigkeit und Schweregrad von
+        Regelverstößen."
       </p>
     </section>
   );

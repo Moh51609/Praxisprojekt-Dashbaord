@@ -17,13 +17,16 @@ export function evaluateModelRulesPure(data: ParsedModel, relations: any[]) {
   });
 
   // ✅ R2 – Leere Packages
-  const emptyPackages =
-    data.packages?.filter((p) => (p.elements ?? []).length === 0) ?? [];
+  // R2 – Leere Packages
+  const emptyPackages = data.elements.filter(
+    (pkg) =>
+      pkg.type === "uml:Package" &&
+      !data.elements.some((el) => el.package === pkg.name)
+  );
   rules.push({
     id: "R2",
     name: "Leere Packages",
-    description:
-      "Packages sollten Inhalte (Blöcke, Ports oder Diagramme) enthalten.",
+    description: "Packages sollten Inhalte enthalten.",
     passed: emptyPackages.length === 0,
     violations: emptyPackages.length,
   });

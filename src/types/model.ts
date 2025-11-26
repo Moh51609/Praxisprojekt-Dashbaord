@@ -105,5 +105,6 @@ export type ParsedModel = {
   diagramList: DiagramInfo[];
   classStats: ClassStat[];
   quality?: QualityMetrics;
-  searchIndex?: SearchIndexItem[];
+  searchIndex: SearchIndexItem[];
+  packages: UmlElement[];
 };

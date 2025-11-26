@@ -159,10 +159,12 @@ export function evaluateModelSmellsPure(
     for (let j = i + 1; j < nameCandidates.length; j++) {
       const a = nameCandidates[i];
       const b = nameCandidates[j];
+      const aName = a.name?.toLowerCase() ?? "";
+      const bName = b.name?.toLowerCase() ?? "";
 
       if (a.type !== b.type) continue; // gleiche Typen vergleichen
-      const dist = levenshtein.get(a.name.toLowerCase(), b.name.toLowerCase());
-      const maxLen = Math.max(a.name.length, b.name.length);
+      const dist = levenshtein.get(aName, bName);
+      const maxLen = Math.max(aName.length, bName.length);
       const similarity = 1 - dist / maxLen;
 
       if (similarity > 0.88 && a.name !== b.name) {
@@ -246,7 +248,7 @@ export function evaluateModelSmellsPure(
       (e) =>
         e.name &&
         e.name !== d.name &&
-        (e.package?.includes(d.name) || d.name.includes(e.name))
+        (e.package?.includes(d.name ?? "") || d.name?.includes(e.name))
     );
 
     if (!hasLinkedElement) {

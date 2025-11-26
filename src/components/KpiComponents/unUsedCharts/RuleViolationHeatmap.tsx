@@ -54,7 +54,7 @@ export default function RuleViolationHeatmap({ rules }: { rules: any[] }) {
       <div className="flex flex-row justify-between items-center mb-4">
         <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100 flex items-center gap-2">
           <Flame className="h-5 w-5" style={{ color: accentColor }} />
-          {translations[language].ruleHeatmap || "Regelverstöße Heatmap"}
+          Regelverstöße Heatmap
         </h2>
       </div>
 
@@ -107,8 +107,7 @@ export default function RuleViolationHeatmap({ rules }: { rules: any[] }) {
       </ResponsiveContainer>
 
       <p className="text-xs text-gray-500 dark:text-gray-300 mt-3 text-center">
-        {translations[language].ruleHeatmapDesc ||
-          "Zeigt, in welchen Kategorien und Regeln die meisten Verstöße vorkommen."}
+        "Zeigt, in welchen Kategorien und Regeln die meisten Verstöße vorkommen.
       </p>
     </section>
   );

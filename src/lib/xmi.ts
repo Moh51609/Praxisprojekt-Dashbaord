@@ -5,6 +5,7 @@ import type {
   UmlElement,
   UmlRelationship,
   ClassStat,
+  SearchIndexItem,
   DiagramInfo,
   Metrics,
 } from "@/types/model";
@@ -517,50 +518,62 @@ export function parseXmiFromString(xmiText: string): ParsedModel {
     {}
   );
 
-  const searchIndex = [
+  const searchIndex: SearchIndexItem[] = [
     // Elemente
-    ...elements.map((e) => ({
-      id: e.id,
-      name: e.name,
-      type: e.type,
-      kind: "element",
-      parent: null,
-      original: e,
-    })),
+    ...elements.map((e) => {
+      const item: SearchIndexItem = {
+        id: e.id,
+        name: e.name ?? "(Unbenannt)",
+        type: e.type,
+        kind: "element",
+        parent: null,
+        original: e,
+      };
+      return item;
+    }),
 
     // Attribute
     ...elements.flatMap((e) =>
-      (e.attributes ?? []).map((a) => ({
-        id: a.id,
-        name: a.name,
-        type: "Attribute",
-        kind: "attribute",
-        parent: e.id,
-        original: { ...a, parentElement: e },
-      }))
+      (e.attributes ?? []).map((a) => {
+        const item: SearchIndexItem = {
+          id: a.id,
+          name: a.name ?? "(Unbenanntes Attribut)",
+          type: "Attribute",
+          kind: "attribute",
+          parent: e.id,
+          original: { ...a, parentElement: e },
+        };
+        return item;
+      })
     ),
 
     // Ports
     ...elements.flatMap((e) =>
-      (e.ports ?? []).map((p) => ({
-        id: p.id,
-        name: p.name,
-        type: "Port",
-        kind: "port",
-        parent: e.id,
-        original: { ...p, parentElement: e },
-      }))
+      (e.ports ?? []).map((p) => {
+        const item: SearchIndexItem = {
+          id: p.id,
+          name: p.name ?? "(Port ohne Namen)",
+          type: "Port",
+          kind: "port",
+          parent: e.id,
+          original: { ...p, parentElement: e },
+        };
+        return item;
+      })
     ),
 
     // Beziehungen
-    ...relationships.map((r) => ({
-      id: r.id,
-      name: r.name ?? `${r.source} → ${r.target}`,
-      type: r.type,
-      kind: "relationship",
-      parent: null,
-      original: r,
-    })),
+    ...relationships.map((r) => {
+      const item: SearchIndexItem = {
+        id: r.id,
+        name: r.name ?? `${r.source} → ${r.target}`,
+        type: r.type,
+        kind: "relationship",
+        parent: null,
+        original: r,
+      };
+      return item;
+    }),
   ];
 
   // --- FINALER RETURN ------------------------------------------------------
@@ -581,6 +594,7 @@ export function parseXmiFromString(xmiText: string): ParsedModel {
       emptyPackages,
     },
     searchIndex,
+    packages,
   };
 }
 
