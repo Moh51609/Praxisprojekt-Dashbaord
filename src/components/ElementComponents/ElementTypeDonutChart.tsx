@@ -14,47 +14,58 @@ import { useTheme } from "next-themes";
 import { useLanguage } from "@/hooks/useLanguage";
 import { translations } from "@/lib/i18n";
 
-export default function ElementTypeDonutChart({ data }: { data: any }) {
+export default function ElementTypeDonutChart({
+  typeCounts,
+}: {
+  typeCounts: Record<string, number>;
+}) {
   const accent = useAccentColor();
   const { theme } = useTheme();
   const { language } = useLanguage();
 
-  // ✅ 1️⃣ Fallback, falls keine Metriken vorhanden sind
-  if (!data) {
-    return (
-      <section className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-6 text-center text-gray-500 dark:text-gray-400">
-        Keine Daten vorhanden.
-      </section>
-    );
-  }
+  // 🎯 Erlaubte Typen
+  const ALLOWED = [
+    "Class",
+    "Port",
+    "Property",
+    "Package",
+    "Diagram",
+    "Requirement",
+    "Activity",
+  ];
 
-  // ✅ 2️⃣ Daten aus metrics (Hauptquelle)
-  const metrics = data.metrics ?? {};
+  // 🎯 Mapping für Labels
+  const LABELS: Record<string, string> = {
+    Class: "Blöcke",
+    Port: "Ports",
+    Property: "Properties",
+    Package: "Packages",
+    Diagram: "Diagram",
+    Requirement: "Requirements",
+    Activity: "Activity",
+  };
 
-  const chartData = [
-    { name: "Blöcke", value: metrics.classes ?? 0 },
-    { name: "Ports", value: metrics.ports ?? 0 },
-    { name: "Properties", value: metrics.properties ?? 0 },
-    { name: "Packages", value: metrics.packages ?? 0 },
-    { name: "Connectoren", value: metrics.connectors ?? 0 },
-    { name: "Diagram", value: metrics.diagramsTotal ?? 0 },
-  ].filter((d) => d.value > 0);
-
-  // ✅ 3️⃣ Farben (an dein Design angepasst)
-  const colorMap: Record<string, string> = {
+  // 🎨 Farben
+  const COLORS_MAP: Record<string, string> = {
     Blöcke: "#10b981",
     Ports: "#3b82f6",
     Properties: "#f59e0b",
     Packages: "#8b5cf6",
-    Connectoren: "#ef4444",
     Diagram: "#cf6339",
+    Requirements: "#e11d48",
+    Activity: "#6366f1",
   };
 
-  const COLORS = Object.values(colorMap);
+  // 🎯 Daten aufbereiten
+  const chartData = ALLOWED.map((t) => {
+    const clean = t;
+    const label = LABELS[clean];
+    const value = typeCounts?.[clean] ?? 0;
 
-  const axisColor = theme === "dark" ? "#D1D5DB" : "#111827";
+    return { name: label, value };
+  }).filter((d) => d.value > 0);
 
-  if (chartData.length === 0) {
+  if (!chartData.length) {
     return (
       <section className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-6 text-center text-gray-500 dark:text-gray-400">
         Keine Elementtypen gefunden.
@@ -62,7 +73,8 @@ export default function ElementTypeDonutChart({ data }: { data: any }) {
     );
   }
 
-  // ✅ 4️⃣ Render
+  const axisColor = theme === "dark" ? "#D1D5DB" : "#111827";
+
   return (
     <section className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-6">
       <div className="flex justify-between items-center mb-4">
@@ -72,7 +84,7 @@ export default function ElementTypeDonutChart({ data }: { data: any }) {
         </h2>
       </div>
 
-      <div className="w-full h-[200px] flex items-center justify-center">
+      <div className="w-full h-[220px] flex items-center justify-center">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie
@@ -80,15 +92,11 @@ export default function ElementTypeDonutChart({ data }: { data: any }) {
               dataKey="value"
               nameKey="name"
               innerRadius={50}
-              outerRadius={80}
+              outerRadius={85}
               paddingAngle={3}
             >
               {chartData.map((entry, i) => (
-                <Cell
-                  key={`cell-${i}`}
-                  fill={colorMap[entry.name] ?? COLORS[i % COLORS.length]}
-                  strokeWidth={1}
-                />
+                <Cell key={i} fill={COLORS_MAP[entry.name] ?? "#8884d8"} />
               ))}
             </Pie>
 
@@ -97,7 +105,7 @@ export default function ElementTypeDonutChart({ data }: { data: any }) {
                 if (!payload?.length) return null;
                 const { name, value } = payload[0].payload;
                 return (
-                  <div className="  bg-white border border-gray-200 text-black p-2 rounded shadow text-xs">
+                  <div className="bg-white border border-gray-200 text-black p-2 rounded shadow text-xs">
                     <strong>{name}</strong>
                     <div className="text-gray-600">{value}</div>
                   </div>
@@ -123,7 +131,7 @@ export default function ElementTypeDonutChart({ data }: { data: any }) {
       </div>
 
       <p className="text-xs text-gray-500 dark:text-gray-400 mt-3 text-center">
-        Zeigt die Verteilung der Elementtypen im Modell.
+        {translations[language].elementTypeDistributionLegend}
       </p>
     </section>
   );

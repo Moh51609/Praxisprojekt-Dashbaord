@@ -4,7 +4,7 @@ import { Download, FileSpreadsheet, FileDown } from "lucide-react";
 import { useState } from "react";
 import { ParsedModel } from "@/types/model";
 
-export default function ExportDropdown({ data }: { data: ParsedModel }) {
+export default function ExportDropdown({ data }: { data: any }) {
   const [open, setOpen] = useState(false);
   const accentColor = useAccentColor();
 

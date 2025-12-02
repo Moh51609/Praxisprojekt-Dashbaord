@@ -32,8 +32,9 @@ export default function Elements() {
   const [elements, setElements] = useState<any[]>([]);
   const [typeCounts, setTypeCounts] = useState<Record<string, number>>({});
   const [error, setError] = useState<string | null>(null);
-  const [data, setData] = useState<ParsedModel | null>(null);
   const [stats, setStats] = useState({ total: 0, distinctTypes: 0 });
+  const [relations, setRelations] = useState<any[]>([]);
+  const [diagramTypes, setDiagramTypes] = useState<Record<string, number>>({});
   const accentColor = useAccentColor();
   const pageBackground = usePageBackground();
   const { language } = useLanguage();
@@ -77,47 +78,21 @@ export default function Elements() {
   };
 
   useEffect(() => {
-    fetch("/api/xmi")
-      .then((r) => r.json())
-      .then((j: ParsedModel | { error: string }) => {
-        if ("error" in j) {
-          setError(j.error);
-          return;
-        }
-        setData(j);
-
-        // 1) Counter-Record aufbauen (explizit typisieren!)
-        const countsByType: Record<string, number> = j.elements.reduce(
-          (acc: Record<string, number>, e) => {
-            acc[e.type] = (acc[e.type] ?? 0) + 1;
-            return acc;
-          },
-          {} as Record<string, number>
-        );
-
-        // 2) In Array<{name, value}> umwandeln (Tupeltyp angeben!)
-        const byTypeArr: CountByType[] = Object.entries(countsByType).map(
-          ([name, value]: [string, number]) => ({ name, value })
-        );
-
-        setByType(byTypeArr);
-      })
-      .catch((e) => setError(String(e)));
-  }, []);
-
-  useEffect(() => setMounted(true), []);
-  useEffect(() => {
     fetch("/api/xmi-elements")
-      .then((r) => r.json())
-      .then((j) => {
-        if ("error" in j) setError(j.error);
-        else {
-          setElements(j.elements);
-          setTypeCounts(j.typeCounts);
-          setStats({ total: j.total, distinctTypes: j.distinctTypes });
-        }
+      .then((res) => res.json())
+      .then((json) => {
+        if (json.error) return setError(json.error);
+
+        setElements(json.elements);
+        setTypeCounts(json.typeCounts);
+        setStats({
+          total: json.totalElements,
+          distinctTypes: json.distinctTypes,
+        });
+        setDiagramTypes(json.diagramTypes);
+        setRelations(json.relations);
       })
-      .catch((e) => setError(String(e)));
+      .catch((err) => setError(String(err)));
   }, []);
 
   if (error) {
@@ -135,7 +110,7 @@ export default function Elements() {
           {translations[language].elements}
         </h1>
 
-        {data && <ExportDropdown data={data} />}
+        {<ExportDropdown data={elements} />}
       </header>
       <div className="grid grid-cols-1 xl:grid-cols-[3.5fr_1.5fr] gap-6 py-4">
         {/* 🔹 Linke Seite – KPI-Cards */}
@@ -166,10 +141,10 @@ export default function Elements() {
         </div>
 
         {/* 🔸 Rechte Seite – Donut Diagramm */}
-        {data && <ElementTypeDonutChart data={data} />}
+        <ElementTypeDonutChart typeCounts={typeCounts} />
       </div>
 
-      {data && <ElementTable data={data} />}
+      {elements && <ElementTable data={elements} />}
     </div>
   );
 }

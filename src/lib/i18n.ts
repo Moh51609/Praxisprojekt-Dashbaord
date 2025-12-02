@@ -77,6 +77,8 @@ export const translations = {
     interface: "Benutzeroberfläche",
     privacySystem: "Datenschutz & System",
 
+    elementTypeDistributionLegend:
+      "Zeigt die Verteilung der Elementtypen im Modell.",
     // Erscheinungsbild
 
     patternNone: "kein Muster",
@@ -170,6 +172,8 @@ export const translations = {
     smellsBySeverity: "Smells nach Schweregrad",
     smellsBySeverityLegend:
       "Zeigt die Verteilung der Model-Smells nach Schweregrad (Low, Medium, High).",
+
+    elementsInModel: "Elemente im Modell",
 
     deleteData: "Daten & Cookies löschen",
 
@@ -311,6 +315,11 @@ export const translations = {
 
     ruleAnalysis: "Rule anaylsis",
     coverageAnalysis: "Coverage analysis",
+
+    elementTypeDistributionLegend:
+      "Shows the Distribution of the Elements inside the Model",
+
+    elementsInModel: "Elements in Model",
 
     // Data & Charts
     maxElements: "Max. elements per chart",

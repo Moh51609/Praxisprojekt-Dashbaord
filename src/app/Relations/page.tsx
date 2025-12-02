@@ -25,7 +25,6 @@ export default function RelationsPage() {
         else {
           setRelations(j.relations);
 
-          // 🧩 Debug: zeige welche Typen wirklich vorkommen
           const typeCount = j.relations.reduce(
             (acc: Record<string, number>, r: any) => {
               acc[r.type] = (acc[r.type] ?? 0) + 1;
@@ -33,7 +32,6 @@ export default function RelationsPage() {
             },
             {}
           );
-          console.log("🔍 Beziehungstypen in API:", typeCount);
         }
       })
       .catch((e) => setError(String(e)));
@@ -57,13 +55,13 @@ export default function RelationsPage() {
   const kpiItems = [
     {
       key: "totalRelations",
-      title: translations[language].totalRelations, // ✅ Übersetzt
+      title: translations[language].totalRelations,
       value: relations.length,
       icon: <Link2 className="h-5 w-5" />,
     },
     ...importantTypes.map((type) => ({
       key: type,
-      title: "type", // ✅ versucht Übersetzung, sonst Rohwert
+      title: type,
       value: relationTypeCounts[type] ?? 0,
       icon: <GitBranch className="h-5 w-5" />,
     })),
@@ -75,7 +73,6 @@ export default function RelationsPage() {
     },
   ];
 
-  // Fehlende Typen auf 0 setzen
   importantTypes.forEach((t) => {
     if (!(t in relationTypeCounts)) relationTypeCounts[t] = 0;
   });
@@ -93,10 +90,7 @@ export default function RelationsPage() {
         <RelationsExportDropdown relations={relations} />
       </header>
       <div className="flex-col flex gap-6 ">
-        {/* 🔹 Sidebar KPIs */}
-        {/* 🔹 Einheitliches KPI-Grid */}
         <div className="grid grid-cols-1 xl:grid-cols-[3.5fr_1.5fr] gap-6">
-          {/* 🔹 Linke Seite – KPI Grid */}
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 items-stretch">
             {kpiItems.map((item) => (
               <KpiCard
@@ -108,7 +102,6 @@ export default function RelationsPage() {
             ))}
           </div>
 
-          {/* 🔸 Rechte Seite – Donut Diagramm */}
           <RelationTypeDonutChart relations={relations} />
         </div>
 

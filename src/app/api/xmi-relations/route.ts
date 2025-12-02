@@ -4,7 +4,6 @@ import path from "path";
 import { XMLParser } from "fast-xml-parser";
 import { parseXmiFromString } from "@/lib/xmi";
 
-// 🔍 Hilfsfunktion: versucht, eine ID aus einem Relation-Endpunkt zu extrahieren
 function resolveEndRef(end: any): string | null {
   if (!end) return null;
   if (typeof end === "string") return end;
@@ -24,7 +23,7 @@ export async function GET() {
   try {
     const filePath = path.join(process.cwd(), "public", "Praktikum3.xml");
     if (!fs.existsSync(filePath)) {
-      throw new Error(`❌ XMI-Datei nicht gefunden unter ${filePath}`);
+      throw new Error(`XMI-Datei nicht gefunden unter ${filePath}`);
     }
 
     const xmlData = fs.readFileSync(filePath, "utf-8");
@@ -40,7 +39,6 @@ export async function GET() {
 
     const relations: any[] = [];
 
-    // 🧩 Rekursive Suche nach Beziehungen in jeder Ebene
     function collectRelations(node: any) {
       if (!node || typeof node !== "object") return;
 
@@ -65,7 +63,6 @@ export async function GET() {
         let source = null;
         let target = null;
 
-        // 🧠 Versuche, Source/Target logisch zu erkennen
         if (node.client) source = resolveEndRef(node.client);
         if (node.supplier) target = resolveEndRef(node.supplier);
         if (!source && node.source) source = resolveEndRef(node.source);
@@ -88,7 +85,6 @@ export async function GET() {
         });
       }
 
-      // 🔁 Rekursiv alle Unterobjekte durchsuchen
       for (const key of Object.keys(node)) {
         const val = node[key];
         if (Array.isArray(val)) val.forEach((v) => collectRelations(v));
@@ -98,9 +94,7 @@ export async function GET() {
 
     collectRelations(model);
 
-    // 🧩 Namen aus vollständigem Parser ziehen
     const parsed = parseXmiFromString(xmlData);
-    // 🔹 Vollständiges ID→Name-Mapping (auch für Ports, Properties usw.)
     const idToName: Record<string, string> = {};
 
     function collectNames(node: any) {
@@ -118,7 +112,6 @@ export async function GET() {
 
     collectNames(model);
 
-    // 🔹 Sammle Mapping: Property-ID → referenzierter Blocktyp-ID
     const propertyToType: Record<string, string> = {};
 
     function collectTypeRefs(node: any) {
@@ -138,7 +131,6 @@ export async function GET() {
     }
     collectTypeRefs(model);
 
-    // 🔹 Mapping: Port-ID → referenzierter Typ-ID (z. B. Interface oder Block)
     const portToType: Record<string, string> = {};
 
     function collectPortRefs(node: any) {
@@ -154,7 +146,6 @@ export async function GET() {
     }
     collectPortRefs(model);
 
-    // 🔹 Mapping: ConnectorEnd-ID → role-ID (zeigt auf Port oder Property)
     const connectorEndToRole: Record<string, string> = {};
 
     function collectConnectorEnds(node: any) {
@@ -174,9 +165,7 @@ export async function GET() {
     }
     collectConnectorEnds(model);
 
-    // 💡 IDs durch lesbare Namen ersetzen
     const enrichedRelations = relations.map((r) => {
-      // 🔹 Schritt 1: ConnectorEnd auflösen → Port oder Property
       let sourceResolved =
         connectorEndToRole[r.source] ||
         propertyToType[r.source] ||
@@ -189,7 +178,6 @@ export async function GET() {
         portToType[r.target] ||
         r.target;
 
-      // 🔹 Schritt 2: Falls ConnectorEnd auf Port zeigt, auch diesen weiter auflösen
       sourceResolved =
         propertyToType[sourceResolved] ||
         portToType[sourceResolved] ||
@@ -199,7 +187,6 @@ export async function GET() {
         portToType[targetResolved] ||
         targetResolved;
 
-      // 🔹 Schritt 3: Namen holen
       const sourceName =
         idToName[sourceResolved] ??
         idToName[r.source] ??
@@ -214,10 +201,8 @@ export async function GET() {
       return { ...r, sourceName, targetName };
     });
 
-    console.log(`✅ Gefundene Relationen: ${enrichedRelations.length}`);
     return NextResponse.json({ relations: enrichedRelations });
   } catch (e: any) {
-    console.error("❌ Fehler in /api/xmi-relations:", e);
     return NextResponse.json({ error: e.message }, { status: 500 });
   }
 }
