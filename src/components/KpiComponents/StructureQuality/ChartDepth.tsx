@@ -54,8 +54,8 @@ export default function ChartDepth({
     .filter((e) => e.name)
     .map((e) => ({
       name: e.name
-        ? e.name.length > 25
-          ? e.name.slice(0, 22) + "…"
+        ? e.name.length > 10
+          ? e.name.slice(0, 10) + "…"
           : e.name
         : "(Unbenannt)",
       depth: e.depth ?? 0,
@@ -100,6 +100,11 @@ export default function ChartDepth({
         </button>
       </div>
     );
+  }
+
+  function truncateName(name: string, max = 15): string {
+    if (!name) return "(Unbenannt)";
+    return name.length > max ? name.slice(0, max - 1) + "…" : name;
   }
 
   const start = page * PAGE_SIZE;

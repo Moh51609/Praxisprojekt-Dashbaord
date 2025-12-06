@@ -128,7 +128,7 @@ export default function TopViolatingRulesChart({ rules }: { rules: any[] }) {
         />
 
         {/* SVG + Chart */}
-        <svg ref={svgRef} width="100%" height="175">
+        <svg ref={svgRef} width="100%" height="200">
           <g transform={transform.toString()}>
             <foreignObject width="100%" height="100%">
               <div style={{ width: "100%", height: "100%" }}>

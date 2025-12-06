@@ -39,11 +39,12 @@ export default function RuleDependencyChordChart({ rules }: { rules: any[] }) {
             )
       )
     );
+    console.log("Matrix:", matrix);
 
-    const chord = d3
-      .chordDirected()
-      .padAngle(0.05)
-      .sortSubgroups(d3.descending)(matrix);
+    const chord = d3.chord().padAngle(0.05).sortSubgroups(d3.descending)(
+      matrix
+    );
+    const ribbon = d3.ribbon().radius(innerRadius); // <-- WICHTIG!
 
     const colorScale = d3
       .scaleOrdinal(d3.schemeCategory10)
@@ -54,7 +55,7 @@ export default function RuleDependencyChordChart({ rules }: { rules: any[] }) {
       .selectAll("path")
       .data(chord)
       .join("path")
-      .attr("d", d3.ribbonArrow() as any)
+      .attr("d", ribbon as any)
       .style("fill", (d) => colorScale(rules[d.target.index].id))
       .style("stroke", (d: any) => {
         const c = d3.color(colorScale(rules[d.target.index].id));
@@ -112,7 +113,12 @@ export default function RuleDependencyChordChart({ rules }: { rules: any[] }) {
           .style("left", e.pageX + 10 + "px")
           .style("top", e.pageY - 20 + "px");
       })
+
       .on("mouseout", () => tooltip.style("opacity", 0));
+    console.log("Matrix:", matrix);
+    console.log("Chord:", chord);
+    console.log("Ribbons:", chord);
+    console.log("Groups:", chord.groups);
   }, [rules, theme, accentColor]);
 
   return (

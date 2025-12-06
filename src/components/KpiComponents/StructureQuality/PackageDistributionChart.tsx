@@ -11,7 +11,7 @@ import {
   ReferenceLine,
   Area,
 } from "recharts";
-import { Package } from "lucide-react";
+import { ChevronLast, ChevronLeft, ChevronRight, Package } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useAccentColor } from "@/hooks/useAccentColor";
 import { useChartBackground } from "@/hooks/useChartBackground";
@@ -21,7 +21,17 @@ import { useChartZoom } from "@/hooks/useChartZoom";
 import { translations } from "@/lib/i18n";
 import { useLanguage } from "@/hooks/useLanguage";
 
-export default function PackageDistributionChart({ data }: { data: any }) {
+export default function PackageDistributionChart({
+  data,
+  page = 0,
+  totalPages,
+  onPageChange,
+}: {
+  data: any;
+  page: number;
+  totalPages: number;
+  onPageChange: (newPage: number) => void;
+}) {
   const accentColor = useAccentColor();
   const { theme } = useTheme();
   const chartBackground = useChartBackground();
@@ -30,6 +40,9 @@ export default function PackageDistributionChart({ data }: { data: any }) {
   const chartZoom = useChartZoom();
   const axisColor = theme === "dark" ? "#D1D5DB" : "#111827";
   const { language } = useLanguage();
+  const PAGE_SIZE = 10;
+  const start = page * PAGE_SIZE;
+  const end = start + PAGE_SIZE;
 
   // 🔹 Gruppiere Elemente nach Package
   const packageCounts: Record<string, number> = {};
@@ -62,6 +75,8 @@ export default function PackageDistributionChart({ data }: { data: any }) {
     };
   }, [chartZoom]);
 
+  const total = chartData.length;
+  const totalPagesValue = totalPages ?? Math.ceil(total / PAGE_SIZE);
   return (
     <section className="rounded-2xl dark:bg-gray-800 bg-white p-6 shadow-sm relative">
       {/* 🔹 Titel */}
@@ -114,7 +129,7 @@ export default function PackageDistributionChart({ data }: { data: any }) {
                 {/* 🔹 Diagramm */}
                 <ResponsiveContainer width="100%" height={400}>
                   <BarChart
-                    data={chartData}
+                    data={chartData.slice(start, end)}
                     margin={{ top: 10, right: 20, left: -40, bottom: 0 }}
                   >
                     <XAxis
@@ -193,10 +208,41 @@ export default function PackageDistributionChart({ data }: { data: any }) {
         </svg>
       </div>
 
-      {/* 🔹 Legende */}
-      <p className="text-xs text-gray-500 mt-2 dark:text-gray-300">
-        {translations[language].packageDistributionLegend}
-      </p>
+      <div className="flex flex-row justify-between items-center mt-2">
+        {/* 🔹 Legende */}
+        <p className="text-xs text-gray-500 mt-2 dark:text-gray-300">
+          {translations[language].packageDistributionLegend}
+        </p>
+        <div className="flex justify-end items-center gap-2">
+          <button
+            className={`p-2 rounded-lg border ${
+              page === 0 ? "opacity-30 cursor-not-allowed" : "hover:bg-gray-100"
+            }`}
+            onClick={() => onPageChange(Math.max(0, page - 1))}
+            disabled={page === 0}
+          >
+            <ChevronLeft className="w-3 h-3 text-gray-600  hover:text-black dark:text-white dark:hover:text-black" />
+          </button>
+
+          <span className="text-xs text-gray-600 dark:text-white ">
+            {translations[language].page} {page + 1} / {totalPagesValue}
+          </span>
+
+          <button
+            className={`p-2 rounded-lg border ${
+              page >= totalPagesValue - 1
+                ? "opacity-30 cursor-not-allowed"
+                : "hover:bg-gray-100"
+            }`}
+            onClick={() =>
+              onPageChange(Math.min(totalPagesValue - 1, page + 1))
+            }
+            disabled={page >= totalPagesValue - 1}
+          >
+            <ChevronRight className="w-3 h-3 text-gray-600  hover:text-black dark:text-white hover:dark:text-black" />
+          </button>
+        </div>
+      </div>
     </section>
   );
 }

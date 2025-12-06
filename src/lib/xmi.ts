@@ -376,15 +376,29 @@ export function parseXmiFromString(xmiText: string): ParsedModel {
   }
   collectDiagramNodes(json);
 
-  const mappedDiagrams = diagramNodes.map((d) => ({
-    name: d?.name ?? "Unbenanntes Diagramm",
-    mdType:
-      d["mdElement"] ??
-      d["mdDiagramType"] ??
-      d["diagramType"] ??
-      d["type"] ??
-      "Unknown",
-  }));
+  const mappedDiagrams = diagramNodes.map((d) => {
+    let name = d?.name ?? "Unbenanntes Diagramm";
+    let type = "Unknown";
+
+    // MagicDraw stores diagram type deeply nested:
+    const ext = d["xmi:Extension"] ?? d["Extension"];
+    const rep = ext?.diagramRepresentation;
+    const diagObj = rep?.["diagram:DiagramRepresentationObject"];
+
+    if (diagObj) {
+      // diagram name inside object?
+      if (diagObj.name) name = diagObj.name;
+      // try all possible fields MagicDraw uses
+      type =
+        diagObj.type ??
+        diagObj.umlType ??
+        diagObj.diagramType ??
+        diagObj.diagramKind ??
+        "Unknown";
+    }
+
+    return { name, mdType: type };
+  });
 
   diagramList.push(...mappedDiagrams);
 

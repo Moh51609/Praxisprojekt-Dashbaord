@@ -102,6 +102,7 @@ export type ParsedModel = {
   };
   metrics: Metrics;
   diagramsByType: Record<string, number>;
+
   diagramList: DiagramInfo[];
   classStats: ClassStat[];
   quality?: QualityMetrics;

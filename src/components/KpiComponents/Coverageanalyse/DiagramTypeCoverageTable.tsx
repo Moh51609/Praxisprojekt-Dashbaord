@@ -23,77 +23,62 @@ import { useLanguage } from "@/hooks/useLanguage";
 export default function DiagramTypeCoverageTable({ data }: { data: any }) {
   const accent = useAccentColor();
   const { theme } = useTheme();
+  const { language } = useLanguage();
 
   // 🔹 Typische SysML-Diagrammtypen
-  const diagramTypes = [
-    "UseCase",
-    "BDD",
-    "IBD",
-    "Requirement",
-    "Parametric",
-    "Activity",
-    "Sequence",
-    "StateMachine",
-    "Package",
-    "Constraint",
-    "Deployment", // Hardware- / Systembereitstellung
-    "Component", // Komponentendiagramme
+  const diagrams = data?.diagramList ?? [];
 
-    "Interaction", // Interaktionsübersichten
-    "Profile",
+  // Die Zieltyp-Liste
+  const diagramTypes = [
+    "Block Definition Diagram",
+    "Internal Block Diagram",
+    "Use Case Diagram",
+    "Requirement Diagram",
+    "Parametric Diagram",
+    "Activity Diagram",
+    "Sequence Diagram",
+    "State Machine Diagram",
+    "Package Diagram",
+    "Profile Diagram",
+    "Deployment Diagram",
+    "Component Diagram",
   ];
 
-  const { language } = useLanguage();
-  // 🔹 Zuordnung: Diagrammtyp → enthaltene Elemente
+  // Mapping Ergebnis
   const diagramMap: Record<string, string[]> = {};
 
-  (data?.elements ?? []).forEach((el: any) => {
-    const type = el.type?.toLowerCase() ?? "";
-    const name = el.name || "(Unbenannt)";
-    const pkg = el.packageName || el.package || "Unbekannt";
-    const location = `${name} (${pkg})`;
-
-    // Flexible Erkennung aller Diagrammtypen
-    if (type.match(/(use[\s_-]*case|ucd)/i))
-      pushTo(diagramMap, "UseCase", location);
-    if (type.match(/(block[\s_-]*definition|bdd|sysmlblock)/i))
-      pushTo(diagramMap, "BDD", location);
-    if (type.match(/(internal[\s_-]*block|ibd|sysmlinternal)/i))
-      pushTo(diagramMap, "IBD", location);
-    if (type.match(/(requirement|anforderung)/i))
-      pushTo(diagramMap, "Requirement", location);
-    if (type.match(/(parametric|constraint|parameterdiagramm)/i))
-      pushTo(diagramMap, "Parametric", location);
-    if (type.match(/(activity|aktion|flow)/i))
-      pushTo(diagramMap, "Activity", location);
-    if (type.match(/(sequence|interaktion)/i))
-      pushTo(diagramMap, "Sequence", location);
-    if (type.match(/(state|zustand|statemachine)/i))
-      pushTo(diagramMap, "StateMachine", location);
-    if (type.match(/(package|pkg)/i)) pushTo(diagramMap, "Package", location);
-    if (type.match(/(constraint|regel|parametric)/i))
-      pushTo(diagramMap, "Constraint", location);
-    if (type.match(/(deployment|bereitstellung)/i))
-      pushTo(diagramMap, "Deployment", location);
-    if (type.match(/(component|komponente)/i))
-      pushTo(diagramMap, "Component", location);
-    if (type.match(/(communication|kommunikation)/i))
-      pushTo(diagramMap, "Communication", location);
-    if (type.match(/(timing|zeitdiagramm)/i))
-      pushTo(diagramMap, "Timing", location);
-    if (type.match(/(interaction|interaktionsübersicht)/i))
-      pushTo(diagramMap, "Interaction", location);
-    if (type.match(/(profile|stereotype)/i))
-      pushTo(diagramMap, "Profile", location);
-  });
-
-  // Hilfsfunktion: Element zur Liste hinzufügen
-  function pushTo(map: Record<string, string[]>, key: string, val: string) {
+  // Hilfsfunktion
+  function pushTo(map: any, key: string, value: string) {
     if (!map[key]) map[key] = [];
-    if (!map[key].includes(val)) map[key].push(val);
+    map[key].push(value);
   }
 
-  // 🔹 Vorbereitung der Tabellenzeilen
+  // ▶️ Erkennung über mdType
+  diagrams.forEach((d: any) => {
+    const type = d.mdType?.toLowerCase() ?? "";
+    const name = d.name ?? "Unbenanntes Diagramm";
+
+    if (type.includes("block definition"))
+      pushTo(diagramMap, "Block Definition Diagram", name);
+    if (type.includes("internal block"))
+      pushTo(diagramMap, "Internal Block Diagram", name);
+    if (type.includes("use case")) pushTo(diagramMap, "Use Case Diagram", name);
+    if (type.includes("requirement"))
+      pushTo(diagramMap, "Requirement Diagram", name);
+    if (type.includes("parametric"))
+      pushTo(diagramMap, "Parametric Diagram", name);
+    if (type.includes("activity")) pushTo(diagramMap, "Activity Diagram", name);
+    if (type.includes("sequence")) pushTo(diagramMap, "Sequence Diagram", name);
+    if (type.includes("state"))
+      pushTo(diagramMap, "State Machine Diagram", name);
+    if (type.includes("package")) pushTo(diagramMap, "Package Diagram", name);
+    if (type.includes("profile")) pushTo(diagramMap, "Profile Diagram", name);
+    if (type.includes("deployment"))
+      pushTo(diagramMap, "Deployment Diagram", name);
+    if (type.includes("component"))
+      pushTo(diagramMap, "Component Diagram", name);
+  });
+
   const rows = diagramTypes.map((type) => ({
     type,
     count: diagramMap[type]?.length ?? 0,

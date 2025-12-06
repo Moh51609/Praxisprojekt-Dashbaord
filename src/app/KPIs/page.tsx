@@ -101,7 +101,9 @@ import KpiExportDropdown from "@/components/KpiComponents/KpiExportDropdown";
 export default function KPIs() {
   const [data, setData] = useState<ParsedModel | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [page, setPage] = useState(0); // 🆕 aktuelle Seite (0, 1, 2 …)
+  const [page, setPage] = useState(0);
+  const [pagePackage, setPagePackage] = useState(0);
+
   const PAGE_SIZE = 20; // 🧩 20 Elemente pro Seite
   const accessColor = useAccentColor();
   const [portPage, setPortPage] = useState(0);
@@ -165,13 +167,75 @@ export default function KPIs() {
   }, []);
 
   if (!data) {
-    return (
-      <main className="p-6 bg-gray-300">
-        <p className="text-gray-600">Keine Daten geladen...</p>
-        {error && <p className="text-red-500">{error}</p>}
-      </main>
-    );
+    return null;
   }
+
+  const EXPECTED_MODEL_ELEMENTS = {
+    blocks: () => data.classStats.length,
+    associations: () => data.metrics.associations,
+    generalizations: () => data.metrics.generalizations,
+    ports: () => data.metrics.ports,
+    useCases: () => data.metrics.useCases,
+    diagrams: () => data.diagramList.length,
+    dependencies: () => data.metrics.dependencies,
+    connectors: () => data.metrics.connectors,
+    parameters: () => data.metrics.parameters,
+    activities: () => data.metrics.activities,
+    packages: () => data.metrics.packages,
+    profiles: () => data.metrics.profiles,
+    stereotypes: () => data.metrics.stereotypes,
+    abstractions: () => data.metrics.abstraction,
+  };
+
+  const SmellCount = smells.length;
+
+  const totalRules = rules?.length;
+  const passingRules = rules?.filter((r) => r.passed).length ?? 0;
+  const acceptRulesPercentage =
+    totalRules > 0 ? Math.round((passingRules / totalRules) * 100) : 0;
+
+  const avgDepth = data?.elements?.length
+    ? data.elements.reduce((sum, e) => sum + (e.depth ?? 0), 0) /
+      data.elements.length
+    : 0;
+
+  const elementIds = new Set(data.elements.map((e) => e.id));
+
+  const connectedIds = new Set();
+  relations.forEach((r) => {
+    if (elementIds.has(r.source)) connectedIds.add(r.source);
+    if (elementIds.has(r.target)) connectedIds.add(r.target);
+  });
+
+  const connectivityPercent = Math.round(
+    (connectedIds.size / elementIds.size) * 100
+  );
+
+  const existingElementTypes = new Set(data.elements.map((e) => e.type));
+
+  const evaluationResults = Object.values(EXPECTED_MODEL_ELEMENTS).map((fn) =>
+    fn()
+  );
+  const existingCount = evaluationResults.filter((count) => count > 0).length;
+  const possibleCount = evaluationResults.length;
+  const coveragePercent = Math.round((existingCount / possibleCount) * 100);
+
+  const modelHealth =
+    100 -
+    SmellCount * 2 - // jedes Smell zieht 2% ab
+    (100 - acceptRulesPercentage) / 3 - // schlechte Regeln wirken negativ
+    avgDepth * 1.5; // tiefe Hierarchien senken Health
+
+  const healthPercent = Math.max(
+    0,
+    Math.min(
+      100,
+      100 -
+        SmellCount * 0.5 - // deutlich geringere Gewichtung
+        (100 - acceptRulesPercentage) * 0.2 -
+        avgDepth * 2 // moderate Bestrafung
+    )
+  );
 
   const totalPortPages = Math.ceil((data.classStats?.length ?? 0) / 10);
   return (
@@ -189,32 +253,32 @@ export default function KPIs() {
       <div className="grid grid-cols-6 gap-4 justify-between py-4">
         <KpiCard
           title="Model Health"
-          value="83%"
+          value={`${healthPercent.toFixed(2)}%`}
           icon={<HeartPlus style={{ color: accessColor }} />}
         />
         <KpiCard
           title="Accept Rules"
-          value="85%"
+          value={`${acceptRulesPercentage.toFixed(2)}%`}
           icon={<Scale style={{ color: accessColor }} />}
         />
         <KpiCard
           title="Model Smells"
-          value="7"
+          value={`${SmellCount}`}
           icon={<SprayCan style={{ color: accessColor }} />}
         />
         <KpiCard
           title="Avg. Depth"
-          value="2.8"
+          value={`${avgDepth.toFixed(1)}`}
           icon={<TreeDeciduous style={{ color: accessColor }} />}
         />
         <KpiCard
           title="Connectivity"
-          value="92%"
+          value={`${connectivityPercent.toFixed(2)}%`}
           icon={<Cable style={{ color: accessColor }} />}
         />
         <KpiCard
           title="Coverage"
-          value="8/10"
+          value={`${coveragePercent.toFixed(2)}%`}
           icon={<Blend style={{ color: accessColor }} />}
         />
       </div>
@@ -335,7 +399,12 @@ export default function KPIs() {
 
               <DepthDistributionChart data={data} />
 
-              <PackageDistributionChart data={data} />
+              <PackageDistributionChart
+                data={data}
+                page={pagePackage}
+                totalPages={2}
+                onPageChange={setPagePackage}
+              />
             </div>
           )}
 
@@ -352,7 +421,7 @@ export default function KPIs() {
                   <RuleTrendChart />
                 </div>
               </div>
-              <div className=" grid grid-cols-2 gap-4 px-4 pb-4 h-full">
+              <div className=" grid grid-cols-2 gap-4 h-full">
                 <RuleHotspotChart hotspots={hotspots} />
                 <RuleViolationTable
                   data={data}
