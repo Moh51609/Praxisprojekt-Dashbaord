@@ -144,7 +144,6 @@ export default function DashboardPage() {
         else {
           setRelations(j.relations);
 
-          // 🧩 Debug: zeige welche Typen wirklich vorkommen
           const typeCount = j.relations.reduce(
             (acc: Record<string, number>, r: any) => {
               acc[r.type] = (acc[r.type] ?? 0) + 1;
@@ -161,10 +160,10 @@ export default function DashboardPage() {
   if (!mounted) return null;
   return (
     <main
-      className="p-10 space-y-2 bg-gray-300 dark:bg-gray-900 dark:text-gray-50 transition-colors duration-300"
+      className="p-10 space-y-2 bg-gray-300 dark:bg-gray-900 dark:text-gray-50 transition-colors duration-300 min-w-[600px]"
       style={pageBackground}
     >
-      <header className="flex items-center justify-between">
+      <header className="w-full ">
         <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
           <LayoutDashboard className="h-6 w-6" style={{ color: accessColor }} />
           {translations[language].overview}
@@ -180,9 +179,8 @@ export default function DashboardPage() {
       {data && (
         <>
           {/* KPI Cards */}
-          <div className="grid grid-cols-[2fr_1fr] gap-4 items-stretch py-4">
-            {/* 🔹 Linke Seite: KPI-Karten */}
-            <section className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1  [@media(min-width:1600px)]:grid-cols-[2fr_1fr]  gap-4 items-stretch py-4 justify-center  ">
+            <section className="grid lg:grid-cols-3 md:grid-cols-2 sm:grid-cols-1 gap-4 w-full ">
               <KpiCard
                 data={data}
                 title={translations[language].blocks}
@@ -221,9 +219,8 @@ export default function DashboardPage() {
               />
             </section>
 
-            {/* 🔸 Rechte Seite: Donut-Charts */}
-            <section className="flex flex-row gap-4 items-stretch h-full w-full justify-center">
-              <div className="flex-1">
+            <section className="  gap-4 items-stretch h-full w-full">
+              <div className="w-full">
                 <DonutCard
                   title={translations[language].diagramTypes}
                   data={Object.entries(data.diagramsByType).map(
@@ -238,9 +235,9 @@ export default function DashboardPage() {
             </section>
           </div>
 
-          <div className="grid grid-cols-[1fr_1.5fr_1fr] gap-4 ">
-            <section className="flex flex-row gap-4 items-stretch h-full w-full justify-center">
-              <div className="flex-1">
+          <div className="grid grid-cols-1 gap-4 auto-cols-fr w-full  [@media(min-width:1250px)]:grid-cols-2   [@media(min-width:1700px)]:grid-cols-[1fr_1.5fr_1fr]">
+            <section className="gap-4 items-stretch h-full w-full ">
+              <div className="w-full">
                 <DonutCard
                   title={translations[language].relationshipTypes}
                   data={relationsData}
@@ -248,13 +245,12 @@ export default function DashboardPage() {
                 />
               </div>
             </section>
-            {/* Chart: Elemente nach Typ */}
-            <SortedPortDiagram data={data} />
+            <div className="w-full">
+              <SortedPortDiagram data={data} />
+            </div>
             <section className="grid grid-cols-1 gap-4  h-full justify-between  ">
               <ElementCoverageMiniChart />
             </section>
-          </div>
-          <div className="grid grid-cols-3 gap-4 py-4">
             <SmellSeverityBarChart smells={smells} />
             <RuleComplianceChart rules={rules} />
             <OverallKpiTrendChart />

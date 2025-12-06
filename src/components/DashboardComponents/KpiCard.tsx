@@ -20,7 +20,7 @@ export default function KpiCard({
   const accentColor = useAccentColor();
   const { language } = useLanguage();
   return (
-    <div className="rounded-xl bg-white p-6 shadow-md  dark:bg-gray-800 hover:shadow-xl transition space-y-3">
+    <div className="rounded-xl bg-white p-6 shadow-md w-full dark:bg-gray-800 hover:shadow-xl transition space-y-3">
       <div className="flex flex-row justify-between">
         <div className="text-xl dark:text-gray-200 font-semibold text-gray-800">
           {title}

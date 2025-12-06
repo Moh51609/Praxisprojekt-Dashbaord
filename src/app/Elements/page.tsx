@@ -39,6 +39,7 @@ export default function Elements() {
   const pageBackground = usePageBackground();
   const { language } = useLanguage();
   const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
   const [byType, setByType] = useState<CountByType[]>([]);
 
   const ELEMENT_TYPE_ICONS: Record<
@@ -99,9 +100,13 @@ export default function Elements() {
     return <div className="p-6 text-red-600">Fehler: {error}</div>;
   }
 
+  if (!mounted) {
+    return <div className="p-10 space-y-2" />; // leeres Layout, keine Hydration konflikte
+  }
+
   return (
     <div
-      className="p-10 space-y-2 bg-gray-300 dark:bg-gray-900"
+      className="p-10 space-y-2 bg-gray-300 dark:bg-gray-900 min-w-[600px]"
       style={pageBackground}
     >
       <header className="flex items-center justify-between z-[9999]">
@@ -112,9 +117,9 @@ export default function Elements() {
 
         {<ExportDropdown data={elements} />}
       </header>
-      <div className="grid grid-cols-1 xl:grid-cols-[3.5fr_1.5fr] gap-6 py-4">
+      <div className="grid grid-cols-1 [@media(min-width:1700px)]:grid-cols-[3.5fr_1.5fr]  [@media(min-width:1550px)]:grid-cols-1  gap-6 py-4">
         {/* 🔹 Linke Seite – KPI-Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 items-stretch">
+        <div className="grid   [@media(min-width:1350px)]:grid-cols-4 [@media(min-width:1150px)]:grid-cols-2 grid-cols-1 gap-4 items-stretch">
           <KpiCard
             title={translations[language].totalElements}
             icon={<Link2 style={{ color: accentColor }} />}
@@ -176,7 +181,7 @@ function KpiCard({
       <div className="flex gap-1 items-center ">
         <ArrowUp className="h-3 w-3 text-green-500" />
         <div className="font-bold text-xs text-green-500">5</div>
-        <div className="text-xs text-gray-500 font-medium">
+        <div className="text-[12px] text-gray-500 font-medium">
           {translations[language].sinceLastCommit}
         </div>
       </div>

@@ -160,37 +160,81 @@ export default function ElementTable({ data }: { data: any[] }) {
       </div>
 
       {/* PAGINATION */}
+      {/* PAGINATION */}
       {totalPages > 1 && (
         <div className="flex justify-center items-center mt-4 gap-2">
+          {/* Prev Button */}
           <button
             onClick={handlePrev}
             disabled={currentPage === 1}
-            className="p-2 border rounded-md"
+            className="p-2 border rounded-md disabled:opacity-50"
           >
             <ChevronLeft className="h-4 w-4" />
           </button>
 
-          {Array.from({ length: totalPages }, (_, i) => (
-            <button
-              key={i}
-              onClick={() => setCurrentPage(i + 1)}
-              className={`px-3 py-1 rounded-md ${
-                currentPage === i + 1
-                  ? "bg-[var(--accent-color)] text-white"
-                  : "bg-gray-100 dark:bg-gray-700"
-              }`}
-              style={
-                currentPage === i + 1 ? { backgroundColor: accent } : undefined
-              }
-            >
-              {i + 1}
-            </button>
-          ))}
+          {(() => {
+            const pagesToShow = 5; // maximale Anzahl sichtbarer Buttons
+            let start = Math.max(1, currentPage - Math.floor(pagesToShow / 2));
+            let end = start + pagesToShow - 1;
 
+            if (end > totalPages) {
+              end = totalPages;
+              start = Math.max(1, end - pagesToShow + 1);
+            }
+
+            const pageButtons = [];
+
+            // Zeige "..." wenn links abgeschnitten
+            if (start > 1) {
+              pageButtons.push(
+                <button
+                  key="start-ellipsis"
+                  className="px-3 py-1 bg-gray-100 dark:bg-gray-700 rounded-md cursor-default"
+                >
+                  ...
+                </button>
+              );
+            }
+
+            for (let i = start; i <= end; i++) {
+              pageButtons.push(
+                <button
+                  key={i}
+                  onClick={() => setCurrentPage(i)}
+                  className={`px-3 py-1 rounded-md ${
+                    currentPage === i
+                      ? "text-white"
+                      : "bg-gray-100 dark:bg-gray-700"
+                  }`}
+                  style={
+                    currentPage === i ? { backgroundColor: accent } : undefined
+                  }
+                >
+                  {i}
+                </button>
+              );
+            }
+
+            // Zeige "..." wenn rechts abgeschnitten
+            if (end < totalPages) {
+              pageButtons.push(
+                <button
+                  key="end-ellipsis"
+                  className="px-3 py-1 bg-gray-100 dark:bg-gray-700 rounded-md cursor-default"
+                >
+                  ...
+                </button>
+              );
+            }
+
+            return pageButtons;
+          })()}
+
+          {/* Next Button */}
           <button
             onClick={handleNext}
             disabled={currentPage === totalPages}
-            className="p-2 border rounded-md"
+            className="p-2 border rounded-md disabled:opacity-50"
           >
             <ChevronRight className="h-4 w-4" />
           </button>
