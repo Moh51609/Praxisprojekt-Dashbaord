@@ -107,7 +107,7 @@ export default function PortComplexityChart({
   const chartData =
     topBlocksSlice.length > 0 ? topBlocksSlice : topBlocks.slice(0, 10);
 
-  console.log("TopBlocksSlice:", chartData);
+  
 
   const totalPages = Math.max(1, Math.ceil(topBlocks.length / PAGE_SIZE));
 
@@ -190,8 +190,7 @@ export default function PortComplexityChart({
                       margin={{ top: 10, right: 20, left: -40, bottom: 0 }}
                       data={chartData}
                     >
-                      {/* Farbige Bereiche */}
-                      {/* Schwellenlinien (gestrichelt) */}
+                    
                       <ReferenceLine
                         y={8}
                         stroke="#facc15" // Gelb
@@ -216,7 +215,7 @@ export default function PortComplexityChart({
                         }}
                       />
 
-                      {/* X-Achse unten: Blocknamen */}
+                     
                       <XAxis
                         dataKey="className"
                         interval={0}
@@ -228,7 +227,6 @@ export default function PortComplexityChart({
                         tickLine={false}
                       />
 
-                      {/* Y-Achse links: Port-Anzahl */}
                       <YAxis
                         type="number"
                         tick={{ fill: axisColor, fontSize: 12 }}

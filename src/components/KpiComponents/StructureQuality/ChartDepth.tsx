@@ -102,10 +102,7 @@ export default function ChartDepth({
     );
   }
 
-  function truncateName(name: string, max = 15): string {
-    if (!name) return "(Unbenannt)";
-    return name.length > max ? name.slice(0, max - 1) + "…" : name;
-  }
+ 
 
   const start = page * PAGE_SIZE;
   const end = start + PAGE_SIZE;

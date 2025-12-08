@@ -91,7 +91,7 @@ export default function SettingsPage() {
 
   return (
     <main
-      className="p-8 bg-gray-100 dark:bg-gray-900 min-h-screen space-y-8 transition-colors duration-300"
+      className="p-8 bg-gray-100 dark:bg-gray-900  space-y-8 transition-colors duration-300 min-h-[600px]"
       style={pageBackground}
     >
       <header className="flex items-center justify-between">
@@ -100,7 +100,7 @@ export default function SettingsPage() {
           {translations[language].settings}
         </h1>
       </header>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 [@media(min-width:1450px)]:grid-cols-2 gap-6">
         {/* 🌓 Erscheinungsbild */}
         <section className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-md transition-all">
           <h2 className="text-lg font-semibold mb-4 flex items-center gap-2 text-gray-800 dark:text-gray-100">
@@ -448,7 +448,6 @@ export default function SettingsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      ;
     </main>
   );
 }

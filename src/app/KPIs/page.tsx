@@ -240,7 +240,7 @@ export default function KPIs() {
   const totalPortPages = Math.ceil((data.classStats?.length ?? 0) / 10);
   return (
     <main
-      className="p-10 space-y-2 bg-gray-300 dark:bg-gray-900"
+      className="p-10 space-y-2 bg-gray-300 dark:bg-gray-900 min-w-[600px]"
       style={pageBackground}
     >
       <header className="flex items-center justify-between z-[9999]">
@@ -250,7 +250,7 @@ export default function KPIs() {
         </h1>
         <KpiExportDropdown data={data} relations={relations} smells={smells} />
       </header>
-      <div className="grid grid-cols-6 gap-4 justify-between py-4">
+      <div className="grid grid-cols-1  [@media(min-width:1800px)]:grid-cols-6 [@media(min-width:1200px)]:grid-cols-3  [@media(min-width:1000px)]:grid-cols-2 gap-4 justify-between py-4">
         <KpiCard
           title="Model Health"
           value={`${healthPercent.toFixed(2)}%`}
@@ -376,7 +376,7 @@ export default function KPIs() {
             </Select>
           </div>
           {section === "structure" && (
-            <div className="grid grid-cols-2 h-full lg:grid-cols-2 gap-4 py-4">
+            <div className="grid grid-cols-1  [@media(min-width:1500px)]:grid-cols-2 h-full gap-4 py-4">
               <ChartDepth
                 data={data}
                 page={page}
@@ -410,18 +410,18 @@ export default function KPIs() {
 
           {section === "rules" && (
             <div className="flex flex-col ">
-              <div className="grid grid-cols-3 h-full lg:grid-cols-3 gap-4 py-4">
+              <div className="grid grid-cols-1 [@media(min-width:1650px)]:grid-cols-3 [@media(min-width:1250px)]:grid-cols-2 h-full  gap-4 py-4">
                 <div className="grid grid-cols-1 gap-4">
                   <RuleComplianceChart rules={rules} />
                   <RuleViolationsByCategoryChart rules={rules} />
                 </div>
                 <RuleDependencyChordChart rules={rules} />
-                <div className="grid grid-cols-1 gap-4">
+                <div className="grid grid-cols-1  gap-4">
                   <TopViolatingRulesChart rules={rules} />
                   <RuleTrendChart />
                 </div>
               </div>
-              <div className=" grid grid-cols-2 gap-4 h-full">
+              <div className="grid grid-cols-1 [@media(min-width:1650px)]:grid-cols-2 gap-4 h-full">
                 <RuleHotspotChart hotspots={hotspots} />
                 <RuleViolationTable
                   data={data}
@@ -433,7 +433,7 @@ export default function KPIs() {
           )}
 
           {section === "coverage" && (
-            <div className="grid grid-cols-3 gap-4 py-4">
+            <div className="grid  grid-cols-1 [@media(min-width:1800px)]:grid-cols-3 [@media(min-width:1250px)]:grid-cols-2 gap-4 py-4">
               <div className="grid gird-cols-1 gap-4">
                 {" "}
                 <ElementTypeDistributionChart />
@@ -449,14 +449,14 @@ export default function KPIs() {
 
           {section === "smells" && (
             <div className="flex flex-col gap-4">
-              <div className="grid grid-cols-[33%_66%] gap-4 py-4">
-                <div className="grid grid-cols-1 gap-4">
+              <div className="grid  grid-cols-1 [@media(min-width:1650px)]:grid-cols-[33%_66%] [@media(min-width:1250px)]:grid-cols-1 gap-4 py-4">
+                <div className="grid [@media(min-width:1650px)]:grid-cols-1 grid-cols-2 gap-4">
                   <SmellCategoryDonutChart smells={smells} />
                   <SmellSeverityBarChart smells={smells} />
                 </div>
                 <SmellViolationTable smells={smells} />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid [@media(min-width:1650px)]:grid-cols-2 grid-cols-1 gap-4">
                 <SmellSeverityTrendChart data={smells} />
                 <SmellDistributionHeatmap smells={smells} />
               </div>
