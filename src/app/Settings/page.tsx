@@ -70,7 +70,7 @@ export default function SettingsPage() {
     }
 
     const savedZoom = localStorage.getItem("chart-zoom");
-    setZoomEnabled(savedZoom !== "false");
+    setZoomEnabled(savedZoom === "true");
 
     const loadChart = localStorage.getItem("auto-load-charts");
     setAutoLoad(loadChart !== "false");
@@ -91,7 +91,7 @@ export default function SettingsPage() {
 
   return (
     <main
-      className="p-8 bg-gray-100 dark:bg-gray-900  space-y-8 transition-colors duration-300 min-h-[600px]"
+      className="p-8 bg-gray-100 dark:bg-gray-900  space-y-8 transition-colors duration-300 min-h-screen min-w-[600px]"
       style={pageBackground}
     >
       <header className="flex items-center justify-between">

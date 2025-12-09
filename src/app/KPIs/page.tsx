@@ -306,7 +306,7 @@ export default function KPIs() {
                   <TooltipTrigger>
                     <Info className="h-4 w-4 text-gray-500 hover:text-gray-800 dark:text-gray-300 cursor-pointer" />
                   </TooltipTrigger>
-                  <TooltipContent className="max-w-xs text-xs bg-gray-700">
+                  <TooltipContent className="max-w-xs text-xs dark:bg-gray-700 bg-gray-300 rounded-xl">
                     Regeln: <br />
                     <br /> R1 - {translations[language].r1}
                     <br /> R2 - {translations[language].r2}

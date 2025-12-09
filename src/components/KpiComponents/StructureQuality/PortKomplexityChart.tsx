@@ -69,15 +69,22 @@ export default function PortComplexityChart({
 
   // Nur Klassen mit Ports > 0
   const topBlocks = topBlocksRaw
-    .filter((c) => (c.ports ?? 0) > 0)
-    .map((c) => ({
-      ...c,
-      className:
-        c.className && c.className.length > 12
-          ? c.className.slice(0, 10) + "…"
-          : c.className ?? "(Unbenannt)",
-      ports: c.ports ?? 0,
-    }));
+    .filter((c) => {
+      const element = data.elements.find((e) => e.id === c.umlId);
+      return (element?.ports?.length ?? 0) > 0;
+    })
+    .map((c) => {
+      const element = data.elements.find((e) => e.id === c.umlId);
+      return {
+        id: c.umlId, // 🟢 Eindeutiger Identifier
+        className:
+          c.className!.length > 12
+            ? c.className!.slice(0, 10) + "…"
+            : c.className,
+        portCount: element?.ports?.length ?? 0,
+        fullName: c.className, // für Tooltip
+      };
+    });
 
   useEffect(() => {
     if (!svgRef.current || !chartZoom) return;
@@ -106,8 +113,6 @@ export default function PortComplexityChart({
   // Fallback falls leer (damit Recharts nicht „verschwimmt“)
   const chartData =
     topBlocksSlice.length > 0 ? topBlocksSlice : topBlocks.slice(0, 10);
-
-  
 
   const totalPages = Math.max(1, Math.ceil(topBlocks.length / PAGE_SIZE));
 
@@ -190,7 +195,6 @@ export default function PortComplexityChart({
                       margin={{ top: 10, right: 20, left: -40, bottom: 0 }}
                       data={chartData}
                     >
-                    
                       <ReferenceLine
                         y={8}
                         stroke="#facc15" // Gelb
@@ -215,7 +219,6 @@ export default function PortComplexityChart({
                         }}
                       />
 
-                     
                       <XAxis
                         dataKey="className"
                         interval={0}
@@ -238,13 +241,17 @@ export default function PortComplexityChart({
                       <Tooltip
                         content={({ payload }) => {
                           if (!payload?.length) return null;
-                          const { className, ports } = payload[0].payload;
+
+                          const { id } = payload[0].payload;
+                          const element = topBlocks.find((b) => b.id === id);
+
+                          if (!element) return null;
+
                           return (
-                            <div className="  bg-white border border-gray-200 text-black p-2 rounded shadow text-xs">
-                              {" "}
-                              <strong>{className}</strong>
+                            <div className="bg-white border border-gray-200 text-black p-2 rounded shadow text-xs">
+                              <strong>{element.fullName}</strong>
                               <div className="text-gray-600">
-                                Ports: {ports}
+                                Ports: {element.portCount}
                               </div>
                             </div>
                           );
@@ -260,7 +267,7 @@ export default function PortComplexityChart({
                       {/* Balken */}
 
                       <Bar
-                        dataKey="ports"
+                        dataKey="portCount"
                         isAnimationActive={animationEnabled}
                         fill={accessColor} // 🟣 Gleiche Farbe wie obere Linie
                         radius={[6, 6, 0, 0]}

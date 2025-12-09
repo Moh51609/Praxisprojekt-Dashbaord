@@ -34,6 +34,14 @@ export default function DonutCard({
   const { language } = useLanguage();
   const tooltipStyle = useChartTooltipStyle();
 
+  function cleanDiagramName(name: string) {
+    return name
+      .replace(/^SysML\s*/i, "") // Entfernt "SysML" am Anfang
+      .replace(/Diagram/i, "") // Entfernt "Diagram"
+      .replace(/\s+/g, " ") // Mehrere Leerzeichen reduzieren
+      .trim(); // Trimmen
+  }
+
   useEffect(() => {
     setVisible(autoLoad);
   }, [autoLoad]);
@@ -86,7 +94,7 @@ export default function DonutCard({
                   style={{ backgroundColor: colors[i % colors.length] }}
                 ></span>
                 <span className="truncate">
-                  {d.name.replace(/Diagram/g, "").trim()} ({d.value})
+                  {cleanDiagramName(d.name)} ({d.value})
                 </span>
               </div>
             ))}

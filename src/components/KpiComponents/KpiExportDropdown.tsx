@@ -54,7 +54,7 @@ export default function KpiExportDropdown({ data, relations, smells }: any) {
       <button
         onClick={() => setOpen(!open)}
         className="flex items-center gap-2 px-4 py-2 rounded-lg 
-          bg-gray-800 text-gray-100 hover:bg-gray-700 transition shadow"
+          dark:bg-gray-800 dark:text-gray-100  dark:hover:bg-gray-700 bg-white text-gray-800 hover:bg-gray-100  transition shadow"
       >
         <Download className="h-4 w-4" />
         Exportieren
