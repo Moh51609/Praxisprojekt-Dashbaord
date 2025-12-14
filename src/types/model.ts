@@ -25,6 +25,7 @@ export type UmlElement = {
   outgoing?: string[];
   attributes?: UmlAttribute[];
   ports?: UmlPort[];
+  parentId?: string;
 };
 
 export type UmlRelationship = {

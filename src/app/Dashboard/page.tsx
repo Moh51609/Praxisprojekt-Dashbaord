@@ -145,14 +145,6 @@ export default function DashboardPage() {
       data.metrics.connectors
     : 0;
 
-  useEffect(() => {
-    if (model) return;
-
-    fetch("/api/xmi")
-      .then((r) => r.json())
-      .then((j) => setModel(j));
-  }, [model, setModel]);
-
   if (!mounted) return null;
   return (
     <main

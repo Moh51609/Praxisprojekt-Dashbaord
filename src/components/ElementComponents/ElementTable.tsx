@@ -139,7 +139,7 @@ export default function ElementTable({ data }: { data: any[] }) {
             <TableRow>
               <TableHead>Name</TableHead>
               <TableHead>Typ</TableHead>
-              <TableHead>Package Path</TableHead>
+              <TableHead>Package</TableHead>
 
               <TableHead className="text-right">Attribute</TableHead>
               <TableHead className="text-right">Ports</TableHead>
@@ -157,7 +157,7 @@ export default function ElementTable({ data }: { data: any[] }) {
                     {e.type.replace("uml:", "").replace("sysml:", "")}
                   </TableCell>
 
-                  <TableCell>{e.packagePath}</TableCell>
+                  <TableCell>{e.package}</TableCell>
 
                   <TableCell className="text-right">
                     {e.attributes?.length ?? 0}

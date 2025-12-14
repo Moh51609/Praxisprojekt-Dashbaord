@@ -26,15 +26,12 @@ import ElementTable from "@/components/ElementComponents/ElementTable";
 import ElementTypeDonutChart from "@/components/ElementComponents/ElementTypeDonutChart";
 import ExportDropdown from "@/components/ElementComponents/ExportDropdown";
 import { Label } from "recharts";
+import { useModel } from "@/context/ModelContext";
 
 export default function Elements() {
   type CountByType = { name: string; value: number };
 
-  const [elements, setElements] = useState<any[]>([]);
-  const [typeCounts, setTypeCounts] = useState<Record<string, number>>({});
   const [error, setError] = useState<string | null>(null);
-  const [stats, setStats] = useState({ total: 0, distinctTypes: 0 });
-  const [relations, setRelations] = useState<any[]>([]);
   const [diagramTypes, setDiagramTypes] = useState<Record<string, number>>({});
   const accentColor = useAccentColor();
   const pageBackground = usePageBackground();
@@ -42,6 +39,28 @@ export default function Elements() {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
   const [byType, setByType] = useState<CountByType[]>([]);
+  const { model } = useModel();
+  const elements = model?.elements ?? [];
+  const relations = model?.relationships ?? [];
+
+  const typeCounts = elements.reduce((acc, el) => {
+    const clean = el.type?.replace(/^uml:|^sysml:/, "");
+    if (!clean) return acc;
+    acc[clean] = (acc[clean] ?? 0) + 1;
+
+    return acc;
+  }, {} as Record<string, number>);
+  if (model?.diagramsByType) {
+    typeCounts["Diagram"] = Object.values(model.diagramsByType).reduce(
+      (a, b) => a + b,
+      0
+    );
+  }
+
+  const stats = {
+    total: elements.length,
+    distinctTypes: Object.keys(typeCounts).length,
+  };
 
   const ELEMENT_TYPE_ICONS: Record<
     string,
@@ -78,24 +97,6 @@ export default function Elements() {
       label: translations[language].packages,
     },
   };
-
-  useEffect(() => {
-    fetch("/api/xmi-elements")
-      .then((res) => res.json())
-      .then((json) => {
-        if (json.error) return setError(json.error);
-
-        setElements(json.elements);
-        setTypeCounts(json.typeCounts);
-        setStats({
-          total: json.totalElements,
-          distinctTypes: json.distinctTypes,
-        });
-        setDiagramTypes(json.diagramTypes);
-        setRelations(json.relations);
-      })
-      .catch((err) => setError(String(err)));
-  }, []);
 
   if (error) {
     return <div className="p-6 text-red-600">Fehler: {error}</div>;
@@ -190,7 +191,9 @@ function KpiCard({
       <div className="mt-1 text-3xl font-bold text-gray-900 dark:text-white">
         {value}
       </div>
-      <div>{`${percent}% des Modells`}</div>
+      <div className="text-xs text-gray-500 dark:text-gray-400">
+        {`${percent}% des Modells`}
+      </div>
     </div>
   );
 }

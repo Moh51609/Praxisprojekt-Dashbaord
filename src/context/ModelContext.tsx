@@ -1,28 +1,31 @@
 "use client";
-
 import { createContext, useContext, useEffect, useState } from "react";
-import { ParsedModel } from "@/types/model";
+import type { ParsedModel } from "@/types/model";
 
-type ModelContextType = {
+const ModelContext = createContext<{
   model: ParsedModel | null;
-  setModel: (model: ParsedModel) => void;
-};
-
-const ModelContext = createContext<ModelContextType | null>(null);
+  setModel: (m: ParsedModel) => void;
+}>({
+  model: null,
+  setModel: () => {},
+});
 
 export function ModelProvider({ children }: { children: React.ReactNode }) {
   const [model, setModel] = useState<ParsedModel | null>(null);
-  useEffect(() => {
-    if (model) return;
 
-    fetch("/api/xmi")
-      .then((r) => r.json())
-      .then((data) => {
-        if (!("error" in data)) {
-          setModel(data);
-        }
-      })
-      .catch(console.error);
+  // ✅ 1. Beim Start aus LocalStorage laden
+  useEffect(() => {
+    const stored = localStorage.getItem("active-model");
+    if (stored) {
+      setModel(JSON.parse(stored));
+    }
+  }, []);
+
+  // ✅ 2. Bei Änderung speichern
+  useEffect(() => {
+    if (model) {
+      localStorage.setItem("active-model", JSON.stringify(model));
+    }
   }, [model]);
 
   return (
@@ -32,10 +35,4 @@ export function ModelProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function useModel() {
-  const ctx = useContext(ModelContext);
-  if (!ctx) {
-    throw new Error("useModel must be used inside ModelProvider");
-  }
-  return ctx;
-}
+export const useModel = () => useContext(ModelContext);

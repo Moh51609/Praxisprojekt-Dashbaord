@@ -10,6 +10,32 @@ import type {
   Metrics,
 } from "@/types/model";
 
+const RELEVANT_TYPES = [
+  // UML
+  "uml:Class",
+  "uml:Package",
+  "uml:Port",
+  "uml:Property",
+  "uml:Connector",
+  "uml:Association",
+  "uml:Dependency",
+  "uml:Generalization",
+  "uml:Abstraction",
+  "uml:UseCase",
+  "uml:Activity",
+  "uml:Parameter",
+  "uml:Diagram",
+
+  // SysML
+  "sysml:Block",
+  "sysml:Requirement",
+  "sysml:InternalBlock",
+  "sysml:Constraint",
+  "sysml:Satisfy",
+  "sysml:Verify",
+  "sysml:DeriveReqt",
+];
+
 const parser = new XMLParser({
   ignoreAttributes: false,
   attributeNamePrefix: "",
@@ -56,10 +82,6 @@ function isMaybeBlock(node: any): boolean {
   );
 }
 
-// ------------------------------------------------------------
-// 🆕 NEW: Kleine Hilfsparser für Ports & Attribute
-// ------------------------------------------------------------
-
 function parseAttributes(pe: any) {
   const attrs: any[] = [];
   const list = asArray(pe.ownedAttribute);
@@ -102,15 +124,11 @@ function parsePorts(pe: any) {
 
 export function parseXmiFromString(xmiText: string): ParsedModel {
   const json = parser.parse(xmiText);
+  const elements: UmlElement[] = [];
 
   const xmi = json["xmi:XMI"] ?? json["XMI"] ?? json;
   const model = xmi["uml:Model"] ?? xmi["Model"] ?? xmi;
 
-  // ------------------------------------------------------------
-  // 🔍 STEREOTYPE MAPPING AUS XMI:Extension EXTRAHIEREN
-  // ------------------------------------------------------------
-
-  // Mapping: Class-ID → Stereotyp-Name
   const classToStereotype: Record<string, string> = {};
 
   const extensions = asArray(xmi["xmi:Extension"]);
@@ -135,7 +153,11 @@ export function parseXmiFromString(xmiText: string): ParsedModel {
     }
   }
 
-  function collectDepths(node: any, depth = 0, acc: any = {}) {
+  function collectDepths(
+    node: any,
+    depth = 0,
+    acc: Record<string, number> = {}
+  ): Record<string, number> {
     if (!node || typeof node !== "object") return acc;
     if (node["xmi:id"]) acc[node["xmi:id"]] = depth;
 
@@ -194,7 +216,6 @@ export function parseXmiFromString(xmiText: string): ParsedModel {
 
   walkPackages(model);
 
-  const elements: UmlElement[] = [];
   const relationships: UmlRelationship[] = [];
   const classStats: ClassStat[] = [];
   const diagramList: DiagramInfo[] = [];
@@ -249,7 +270,6 @@ export function parseXmiFromString(xmiText: string): ParsedModel {
       package: packageMap[id] ?? "(Kein Package)",
       depth: depthMap[id] ?? 0,
 
-      // 🆕 NEU: initial leere Detaildaten
       attributes: [],
       ports: [],
       incoming: [],
@@ -257,19 +277,39 @@ export function parseXmiFromString(xmiText: string): ParsedModel {
     };
     idToName[id] = pe.name ?? "(Unbenannt)";
 
-    // ----------------------------------------
-    // 🆕 Attribute & Ports extrahieren
-    // ----------------------------------------
     if (type === "uml:Class") {
       element.attributes = parseAttributes(pe);
       element.ports = parsePorts(pe);
     }
 
     elements.push(element);
+    if (type === "uml:Class") {
+      // Ports
+      for (const p of element.ports ?? []) {
+        elements.push({
+          id: p.id,
+          name: p.name,
+          type: "uml:Port",
+          package: element.package,
+          depth: (element.depth ?? 0) + 1,
+          incoming: [],
+          outgoing: [],
+        });
+      }
 
-    // ----------------------------------------
-    // Beziehungen sammeln
-    // ----------------------------------------
+      // Properties
+      for (const a of element.attributes ?? []) {
+        elements.push({
+          id: a.id,
+          name: a.name,
+          type: "uml:Property",
+          package: element.package,
+          depth: (element.depth ?? 0) + 1,
+          incoming: [],
+          outgoing: [],
+        });
+      }
+    }
 
     // UML Association
     if (type === "uml:Association" || pe.memberEnd || pe.ownedEnd) {
@@ -348,12 +388,23 @@ export function parseXmiFromString(xmiText: string): ParsedModel {
     }
   }
 
-  // ========================================================================
-  //      TEIL 3 — DIAGRAMME, METRIKEN, QUALITÄT & RETURN
-  // ========================================================================
-
-  // --- Diagramme ----------------------------------------------------------
   const diagramNodes: any[] = [];
+  function resolveDiagramPackage(
+    diagram: any,
+    packageMap: Record<string, string>
+  ): string {
+    const ownerId =
+      diagram.owner ??
+      diagram.diagramOwner ??
+      diagram.representedElement ??
+      diagram.modelElement;
+
+    if (typeof ownerId === "string" && packageMap[ownerId]) {
+      return packageMap[ownerId];
+    }
+
+    return "(Diagrams)";
+  }
 
   function collectDiagramNodes(node: any) {
     if (!node || typeof node !== "object") return;
@@ -380,15 +431,12 @@ export function parseXmiFromString(xmiText: string): ParsedModel {
     let name = d?.name ?? "Unbenanntes Diagramm";
     let type = "Unknown";
 
-    // MagicDraw stores diagram type deeply nested:
     const ext = d["xmi:Extension"] ?? d["Extension"];
     const rep = ext?.diagramRepresentation;
     const diagObj = rep?.["diagram:DiagramRepresentationObject"];
 
     if (diagObj) {
-      // diagram name inside object?
       if (diagObj.name) name = diagObj.name;
-      // try all possible fields MagicDraw uses
       type =
         diagObj.type ??
         diagObj.umlType ??
@@ -397,12 +445,40 @@ export function parseXmiFromString(xmiText: string): ParsedModel {
         "Unknown";
     }
 
-    return { name, mdType: type };
+    return {
+      name,
+      mdType: type,
+
+      // 🔑 DAS FEHLTE
+      ownerId:
+        d.owner ??
+        d.diagramOwner ??
+        d.representedElement ??
+        d.modelElement ??
+        d["xmi:idref"],
+    };
   });
 
   diagramList.push(...mappedDiagrams);
 
-  // --- Metriken -----------------------------------------------------------
+  for (const d of mappedDiagrams) {
+    const diagramId = `diagram_${d.name}_${d.mdType}`;
+    if (!d.name || d.name === "Unbenanntes Diagramm") continue; // 🔥 HIER
+
+    if (!elements.some((e) => e.id === diagramId)) {
+      elements.push({
+        id: diagramId,
+        name: d.name,
+        type: "uml:Diagram",
+        stereotype: d.mdType,
+        package: packageMap[d.ownerId] ?? "(Diagrams)",
+        depth: 1,
+        incoming: [],
+        outgoing: [],
+      });
+    }
+  }
+
   const metrics: Metrics = {
     classes: 0,
     profiles: 0,
@@ -490,7 +566,6 @@ export function parseXmiFromString(xmiText: string): ParsedModel {
   }
   tally(json);
 
-  // weitere Qualitätsmetriken
   metrics.unnamedElements = elements.filter((e) => !e.name?.trim()).length;
   metrics.blocksEstimated = classStats.filter((c) => c.maybeSysmlBlock).length;
 
@@ -498,7 +573,6 @@ export function parseXmiFromString(xmiText: string): ParsedModel {
     (d) => d.mdType && d.mdType !== "Unknown"
   );
 
-  // Packages
   const packages = elements.filter((e) => e.type === "uml:Package");
 
   const unnamedPerPackage = packages.map((pkg) => {
@@ -533,7 +607,6 @@ export function parseXmiFromString(xmiText: string): ParsedModel {
   );
 
   const searchIndex: SearchIndexItem[] = [
-    // Elemente
     ...elements.map((e) => {
       const item: SearchIndexItem = {
         id: e.id,
@@ -546,7 +619,6 @@ export function parseXmiFromString(xmiText: string): ParsedModel {
       return item;
     }),
 
-    // Attribute
     ...elements.flatMap((e) =>
       (e.attributes ?? []).map((a) => {
         const item: SearchIndexItem = {
@@ -561,7 +633,6 @@ export function parseXmiFromString(xmiText: string): ParsedModel {
       })
     ),
 
-    // Ports
     ...elements.flatMap((e) =>
       (e.ports ?? []).map((p) => {
         const item: SearchIndexItem = {
@@ -576,7 +647,6 @@ export function parseXmiFromString(xmiText: string): ParsedModel {
       })
     ),
 
-    // Beziehungen
     ...relationships.map((r) => {
       const item: SearchIndexItem = {
         id: r.id,
@@ -590,7 +660,6 @@ export function parseXmiFromString(xmiText: string): ParsedModel {
     }),
   ];
 
-  // --- FINALER RETURN ------------------------------------------------------
   return {
     elements,
     relationships,
