@@ -10,6 +10,7 @@ import HomeRedirect from "./page";
 import SearchOverlay from "@/components/Search/SearchOverlay";
 import TreeOverlay from "@/components/TreeComponents/TreeOverlay";
 import { ModelProvider } from "@/context/ModelContext";
+import { Menu, X } from "lucide-react";
 
 const montserrat = Montserrat({
   subsets: ["latin"],
@@ -20,6 +21,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   // 🔹 State für gespeichertes Muster
   const [bgPattern, setBgPattern] = useState<string>("none");
   const [treeData, setTreeData] = useState([]);
+  const [sidebarOpen, setSidebarOpen] = useState(false); // ✅ NEU
 
   useEffect(() => {
     fetch("/api/xmi-tree")
@@ -28,11 +30,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    // Wenn bereits gesetzt (vom Inline-Script), nicht erneut überschreiben
     const accentFromDom = document.documentElement.getAttribute("data-accent");
     const bgFromDom = document.documentElement.getAttribute("data-bgpattern");
 
-    // Nur wenn nichts gesetzt wurde → aus LocalStorage lesen
     if (!accentFromDom) {
       const savedAccent = localStorage.getItem("accent-color");
       if (savedAccent) {
@@ -93,30 +93,43 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           disableTransitionOnChange
         >
           <ModelProvider>
-            <div
-              style={{ ["--sidebar" as any]: "clamp(240px, 30vw, 320px)" }}
-              className="grid min-h-screen grid-cols-[var(--sidebar)_minmax(0,1fr)]"
-            >
-              {/* Sidebar */}
-              <aside className="hidden bg-white dark:bg-gray-800 md:block">
-                <div className="sticky top-0 h-screen overflow-y-auto">
+            <div className="flex h-screen">
+              <aside
+                className={[
+                  "fixed top-0 left-0 h-screen z-40 w-[300px] bg-white dark:bg-gray-800",
+                  "transition-transform duration-300",
+                  sidebarOpen ? "translate-x-0" : "-translate-x-full",
+                  "md:translate-x-0 md:relative md:block md:transition-none md:transform-none",
+                ].join(" ")}
+              >
+                <div className="h-full overflow-hidden">
                   <Sidebar />
                 </div>
               </aside>
 
-              {/* Inhalt */}
-              <div className="flex min-w-0 flex-col">
-                <main
-                  className="relative mx-auto w-full flex-1 text-gray-900 dark:text-gray-50"
-                  style={{
-                    backgroundColor: "transparent", // ✅ wichtig
-                  }}
-                >
+              <div className="flex flex-1 flex-col min-w-0">
+                {" "}
+                <div className="md:hidden flex items-center h-14 px-4 border-b dark:border-gray-700">
+                  <button
+                    onClick={() => setSidebarOpen((s) => !s)}
+                    className="text-gray-700 dark:text-white"
+                  >
+                    {sidebarOpen ? <X size={24} /> : <Menu size={24} />}
+                  </button>
+                </div>
+                <main className="relative flex-1 w-full overflow-y-auto text-gray-900 dark:text-gray-50">
                   {children}
                 </main>
                 <SearchOverlay />
                 <TreeOverlay tree={treeData} />
               </div>
+
+              {sidebarOpen && (
+                <div
+                  className="fixed inset-0 z-30 bg-black/40 md:hidden"
+                  onClick={() => setSidebarOpen(false)}
+                />
+              )}
             </div>
           </ModelProvider>
         </ThemeProvider>
