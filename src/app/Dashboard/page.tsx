@@ -109,38 +109,6 @@ export default function DashboardPage() {
 
   const totalRelations = relationsData.reduce((sum, r) => sum + r.value, 0);
 
-  const topPorts =
-    data?.classStats
-      ?.sort((a, b) => (b.ports ?? 0) - (a.ports ?? 0))
-      .slice(0, 10)
-      .map((c) => ({ name: c.className ?? "—", value: c.ports ?? 0 })) ?? [];
-
-  useEffect(() => {
-    fetch("/api/xmi")
-      .then((r) => r.json())
-      .then((j: ParsedModel | { error: string }) => {
-        if ("error" in j) {
-          setError(j.error);
-          return;
-        }
-
-        const countsByType: Record<string, number> = j.elements.reduce(
-          (acc: Record<string, number>, e) => {
-            acc[e.type] = (acc[e.type] ?? 0) + 1;
-            return acc;
-          },
-          {} as Record<string, number>
-        );
-
-        const byTypeArr: CountByType[] = Object.entries(countsByType).map(
-          ([name, value]: [string, number]) => ({ name, value })
-        );
-
-        setByType(byTypeArr);
-      })
-      .catch((e) => setError(String(e)));
-  }, []);
-
   useEffect(() => {
     async function loadSmells() {
       try {
@@ -178,18 +146,11 @@ export default function DashboardPage() {
     : 0;
 
   useEffect(() => {
-    if (model) return; // 🔒 schon geladen (z.B. durch Upload)
+    if (model) return;
 
     fetch("/api/xmi")
       .then((r) => r.json())
-      .then((j: ParsedModel | { error: string }) => {
-        if ("error" in j) {
-          setError(j.error);
-          return;
-        }
-        setModel(j); // 🔥 GLOBAL setzen
-      })
-      .catch((e) => setError(String(e)));
+      .then((j) => setModel(j));
   }, [model, setModel]);
 
   if (!mounted) return null;

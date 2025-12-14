@@ -33,7 +33,6 @@ const ALLOWED_TYPES = [
   "block",
   "systemfunktion",
   "function",
-  ,
 ];
 
 export default function RelationsGraph({
