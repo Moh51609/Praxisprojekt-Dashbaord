@@ -7,12 +7,12 @@ import { transcode } from "buffer";
 import { translations } from "@/lib/i18n";
 
 export default function KpiCard({
-  data,
+  total,
   title,
   value,
   icon: Icon,
 }: {
-  data: ParsedModel;
+  total?: number;
   title: string;
   value: number;
   icon?: LucideIcon;
@@ -30,13 +30,11 @@ export default function KpiCard({
       <div className="mt-1 text-4xl font-bold text-gray-900 dark:text-gray-200">
         {value}
       </div>
-      <div className="flex gap-1 items-center ">
-        <ArrowUp className="h-3 w-3 text-green-500" />
-        <div className="font-bold text-xs text-green-500">5</div>
-        <div className="text-xs text-gray-500 font-medium">
-          {translations[language].sinceLastCommit}
+      {typeof total === "number" && (
+        <div className="text-xs text-gray-500 dark:text-gray-400">
+          von insgesamt {total} {translations[language].elements}
         </div>
-      </div>
+      )}
     </div>
   );
 }

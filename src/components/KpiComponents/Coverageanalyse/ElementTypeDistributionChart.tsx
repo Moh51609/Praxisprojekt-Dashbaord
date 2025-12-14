@@ -106,6 +106,11 @@ export default function ElementTypeDistributionChart() {
     );
   }
 
+  function truncatePath(path: string, maxLength = 28) {
+    if (path.length <= maxLength) return path;
+    return "…" + path.slice(path.length - maxLength);
+  }
+
   return (
     <section className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-6 relative">
       {/* Header */}
@@ -118,7 +123,11 @@ export default function ElementTypeDistributionChart() {
         {/* 🔽 Package-Auswahl */}
         <Select value={selectedPackage} onValueChange={setSelectedPackage}>
           <SelectTrigger className="w-[220px]">
-            <SelectValue placeholder="Package auswählen" />
+            <SelectValue>
+              <span className="block max-w-[180px] truncate">
+                {truncatePath(selectedPackage)}
+              </span>
+            </SelectValue>
           </SelectTrigger>
           <SelectContent>
             {packages.map((pkg) => (
@@ -130,9 +139,6 @@ export default function ElementTypeDistributionChart() {
         </Select>
       </div>
 
-      {/* Chart */}
-      {/* Chart */}
-      {/* Chart */}
       {typeCounts.length > 0 ? (
         <div className="w-full h-[250px] flex flex-row items-center justify-center">
           <ResponsiveContainer width="100%" height="100%">
@@ -167,7 +173,6 @@ export default function ElementTypeDistributionChart() {
                 }}
               />
 
-              {/* ✅ Legende innerhalb des gleichen Charts */}
               <Legend
                 layout="vertical"
                 verticalAlign="middle"

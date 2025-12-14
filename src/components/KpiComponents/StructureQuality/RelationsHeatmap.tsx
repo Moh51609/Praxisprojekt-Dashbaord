@@ -124,14 +124,13 @@ export default function RelationsHeatmap({ relations }: { relations: any[] }) {
         </svg>
       </div>
 
-      <p className="text-xs text-gray-500 mt-3 dark:text-white">
+      <p className="text-xs text-gray-500 dark:text-gray-400 mt-3 flex items-center justify-center">
         {translations[language].relationsIntensityLegend}
       </p>
     </div>
   );
 }
 
-// 🔹 Benutzerdefinierte Zellen mit runden Ecken und Namen
 function CustomTreemapCell({ x, y, width, height, name, size, getColor }: any) {
   const color = getColor(size);
   return (

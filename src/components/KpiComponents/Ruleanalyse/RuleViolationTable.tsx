@@ -4,6 +4,7 @@ import { useState, useMemo } from "react";
 import { useAccentColor } from "@/hooks/useAccentColor";
 import { useLanguage } from "@/hooks/useLanguage";
 import { translations } from "@/lib/i18n";
+
 import {
   Table,
   TableBody,
@@ -12,7 +13,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+
 import { Filter, Layers, ChevronLeft, ChevronRight } from "lucide-react";
+
 import {
   Select,
   SelectTrigger,
@@ -29,35 +32,7 @@ interface ViolationEntry {
   severity: "Low" | "Medium" | "High";
 }
 
-// 🔹 Rekursive Extraktion aller Elemente aus Packages
-function flattenElements(packages: any[], parentPath = ""): any[] {
-  let all: any[] = [];
-  for (const pkg of packages) {
-    const currentPath = parentPath ? `${parentPath} › ${pkg.name}` : pkg.name;
-    if (pkg.elements) {
-      all.push(
-        ...pkg.elements.map((el: any) => ({
-          ...el,
-          packagePath: currentPath,
-        }))
-      );
-    }
-    if (pkg.packages) {
-      all.push(...flattenElements(pkg.packages, currentPath));
-    }
-  }
-  return all;
-}
-
-export default function RuleViolationTable({
-  rules,
-  data,
-  relations,
-}: {
-  rules: any[];
-  data: any;
-  relations: any[];
-}) {
+export default function RuleViolationTable({ rules }: { rules: any[] }) {
   const accentColor = useAccentColor();
   const { language } = useLanguage();
   const [selectedRule, setSelectedRule] = useState("all");
@@ -66,134 +41,45 @@ export default function RuleViolationTable({
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 11;
 
-  // 🔹 Gesamtliste aller Elemente inkl. Packages
-  const allElements = useMemo(() => {
-    const root =
-      data.elements?.map((e: any) => ({
-        ...e,
-        packagePath: e.package ?? "Root",
-      })) ?? [];
-    const pkgElements = flattenElements(data.packages ?? []);
-    return [...root, ...pkgElements];
-  }, [data]);
+  /**
+   * 🔹 ALLE Verstöße kommen AUSSCHLIESSLICH aus modelRules.ts
+   * 🔹 KEINE eigene Regel-Logik mehr
+   */
 
-  // 🔹 Relation IDs für R5 & R6
-  const relatedIds = new Set(
-    relations?.flatMap((r) => [r.source, r.target]) ?? []
-  );
-
-  // 🔹 Alle Verstöße präzise bestimmen
   const allViolations: ViolationEntry[] = useMemo(() => {
-    const violations: ViolationEntry[] = [];
+    if (!Array.isArray(rules)) return [];
 
-    for (const el of allElements) {
-      const pkg = el.packagePath ?? "—";
+    const result: ViolationEntry[] = [];
 
-      // ✅ R1 – Block ohne Ports
-      if (el.type?.includes("Block") && (!el.ports || el.ports.length === 0)) {
-        violations.push({
-          id: "R1",
-          element: el.name ?? "(Unbenannt)",
-          packagePath: pkg,
-          description:
-            "Block ohne Ports – jeder Block sollte Schnittstellen besitzen.",
-          severity: "Medium",
-        });
-      }
-
-      // ✅ R3 – Unbenannte Elemente
-      if (!el.name || el.name.trim() === "") {
-        violations.push({
-          id: "R3",
-          element: "(Unbenannt)",
-          packagePath: pkg,
-          description: "Element ist unbenannt.",
-          severity: "Low",
-        });
-      }
-
-      // ✅ R4 – Ungültige Namenskonvention
-      if (el.name && !/^[A-Z][a-zA-Z0-9]*$/.test(el.name)) {
-        violations.push({
-          id: "R4",
-          element: el.name,
-          packagePath: pkg,
-          description: "Elementname entspricht nicht CamelCase.",
-          severity: "Low",
-        });
-      }
-
-      // ✅ R5 – Isolierte Elemente
-      if (!relatedIds.has(el.id)) {
-        violations.push({
-          id: "R5",
-          element: el.name ?? "(Unbenannt)",
-          packagePath: pkg,
-          description: "Element ist isoliert – keine Beziehungen vorhanden.",
-          severity: "High",
-        });
-      }
-
-      // ✅ R7 – Requirement ohne Satisfy
-      if (
-        el.type?.includes("Requirement") &&
-        !relations.some(
-          (r) =>
-            r.type?.includes("Satisfy") &&
-            (r.source === el.id || r.target === el.id)
-        )
-      ) {
-        violations.push({
-          id: "R7",
-          element: el.name ?? "(Unbenannt)",
-          packagePath: pkg,
-          description:
-            "Requirement wird durch kein Modell-Element erfüllt (fehlende Satisfy-Beziehung).",
-          severity: "High",
-        });
+    for (const rule of rules) {
+      if (Array.isArray(rule.violatingElements)) {
+        for (const el of rule.violatingElements) {
+          result.push({
+            id: rule.id,
+            element: el.name ?? "—",
+            packagePath: el.packagePath ?? "—",
+            description: rule.description,
+            severity:
+              rule.violatingElements.length > 5
+                ? "High"
+                : rule.violatingElements.length > 1
+                ? "Medium"
+                : "Low",
+          });
+        }
       }
     }
 
-    // ✅ R2 – Leere Packages
-    const emptyPkgs =
-      data.packages?.filter(
-        (p: any) =>
-          (!p.elements || p.elements.length === 0) &&
-          (!p.packages || p.packages.length === 0)
-      ) ?? [];
-    emptyPkgs.forEach((p: any) =>
-      violations.push({
-        id: "R2",
-        element: p.name ?? "(Unbenanntes Package)",
-        packagePath: "—",
-        description: "Leeres Package ohne Inhalte.",
-        severity: "Medium",
-      })
-    );
+    return result;
+  }, [rules]);
 
-    // ✅ R6 – Ungültige Connector-Enden
-    const invalidConnectors = Array.isArray(relations)
-      ? relations.filter((r) => !r.source || !r.target)
-      : [];
-    invalidConnectors.forEach((r) =>
-      violations.push({
-        id: "R6",
-        element: r.id ?? "(Connector)",
-        packagePath: "—",
-        description: "Ungültiger Connector – Enden fehlen.",
-        severity: "High",
-      })
-    );
-
-    return violations;
-  }, [allElements, relations, data]);
-
+  // 🔹 Filter
   const filteredViolations =
     selectedRule === "all"
       ? allViolations
       : allViolations.filter((v) => v.id === selectedRule);
 
-  // 🔹 Pagination Berechnung
+  // 🔹 Pagination
   const totalPages = Math.ceil(filteredViolations.length / itemsPerPage);
   const startIdx = (currentPage - 1) * itemsPerPage;
   const currentItems = filteredViolations.slice(
@@ -205,7 +91,7 @@ export default function RuleViolationTable({
   const handleNext = () => setCurrentPage((p) => Math.min(p + 1, totalPages));
 
   return (
-    <section className="bg-white dark:bg-gray-800  rounded-2xl shadow-sm p-6">
+    <section className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-6">
       {/* Header */}
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-lg font-semibold flex items-center gap-2 text-gray-800 dark:text-gray-100">
@@ -267,13 +153,17 @@ export default function RuleViolationTable({
                       {v.id}
                     </span>
                   </TableCell>
+
                   <TableCell>{v.element}</TableCell>
+
                   <TableCell className="text-sm text-gray-600 dark:text-gray-400">
                     {v.packagePath}
                   </TableCell>
+
                   <TableCell className="text-sm text-gray-600 dark:text-gray-300">
                     {v.description}
                   </TableCell>
+
                   <TableCell>
                     <span
                       className={`text-xs font-semibold px-2 py-1 rounded ${
@@ -303,7 +193,6 @@ export default function RuleViolationTable({
         </Table>
       </div>
 
-      {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex justify-center items-center mt-4 gap-2">
           <button

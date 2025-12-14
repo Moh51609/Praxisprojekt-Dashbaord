@@ -423,11 +423,7 @@ export default function KPIs() {
               </div>
               <div className="grid grid-cols-1 [@media(min-width:1650px)]:grid-cols-2 gap-4 h-full">
                 <RuleHotspotChart hotspots={hotspots} />
-                <RuleViolationTable
-                  data={data}
-                  rules={rules}
-                  relations={relations}
-                />
+                <RuleViolationTable rules={rules} />
               </div>
             </div>
           )}

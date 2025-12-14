@@ -73,9 +73,48 @@ export async function GET() {
       return count;
     }
 
-    // ----------------------------------------------------
-    // ELEMENTE SAMMELN
-    // ----------------------------------------------------
+    const stereotypeIdToName: Record<string, string> = {};
+    function collectStereotypeDefinitions(node: any) {
+      if (!node || typeof node !== "object") return;
+
+      const id = node["xmi:id"];
+      const name = node["name"];
+      const type = node["xmi:type"];
+
+      if (id && name && type && type.startsWith("sysml:")) {
+        stereotypeIdToName[id] = name;
+      }
+
+      for (const key of Object.keys(node)) {
+        const val = node[key];
+        if (Array.isArray(val)) val.forEach(collectStereotypeDefinitions);
+        else if (typeof val === "object") collectStereotypeDefinitions(val);
+      }
+    }
+    collectStereotypeDefinitions(model);
+    const elementIdToStereotype: Record<string, string> = {};
+    function collectAppliedStereotypes(node: any) {
+      if (!node || typeof node !== "object") return;
+
+      const classifier = node["classifier"]?.["xmi:idref"];
+      const baseClass =
+        node["base_Class"]?.["xmi:idref"] ||
+        node["base_Property"]?.["xmi:idref"] ||
+        node["base_Port"]?.["xmi:idref"];
+
+      if (classifier && baseClass) {
+        elementIdToStereotype[baseClass] =
+          stereotypeIdToName[classifier] ?? classifier;
+      }
+
+      for (const key of Object.keys(node)) {
+        const val = node[key];
+        if (Array.isArray(val)) val.forEach(collectAppliedStereotypes);
+        else if (typeof val === "object") collectAppliedStereotypes(val);
+      }
+    }
+
+    collectAppliedStereotypes(model);
 
     function collectElements(node: any, packagePath = "Root") {
       if (!node || typeof node !== "object") return;
@@ -83,12 +122,8 @@ export async function GET() {
       const type = node["xmi:type"] ?? node["type"];
       const id = node["xmi:id"] ?? node["id"];
       const name = node["name"] ?? "(Unbenannt)";
-      const stereotype =
-        node["stereotype"] ??
-        node["appliedStereotype"] ??
-        node["appliedStereotypeInstance"] ??
-        "";
-
+      const stereotype = elementIdToStereotype[id] ?? "";
+      console.log(stereotype);
       const currentPath =
         type === "uml:Package" && name
           ? `${packagePath} › ${name}`

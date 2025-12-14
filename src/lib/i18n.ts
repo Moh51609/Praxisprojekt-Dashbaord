@@ -149,8 +149,9 @@ export const translations = {
 
     smellTrendChartInModel: "Model-Smells Verlauf im Modell",
     smellTrendInModel: "Model-Smells im Modell",
-
+    connections: "Verbindungen",
     ruleHotspot: "Regel-Hotspots im Modell",
+    relationsTypeLegend: " Zeigt die Verteilung der Beziehungstypen im Modell.",
     ruleHotspotLegend:
       "Zeigt, in welchen Modellbereichen (Paketen/Subsystemen) die meisten Regelverstöße auftreten.",
 
@@ -174,6 +175,7 @@ export const translations = {
       "Zeigt die Verteilung der Model-Smells nach Schweregrad (Low, Medium, High).",
 
     elementsInModel: "Elemente im Modell",
+    naming: "Bennenung",
 
     deleteData: "Daten & Cookies löschen",
 
@@ -299,7 +301,8 @@ export const translations = {
     needSupport: "Need Support?",
     writeUs: "Write to us – we are here for you.",
     support: "Support",
-
+    naming: "naming",
+    connections: "connections",
     // Categories
     appearance: "Appearance",
     dataAndCharts: "Data & Charts",
@@ -330,6 +333,7 @@ export const translations = {
     chartBackgroundLight: "Light",
     chartBackgroundGrid: "Grid",
     chartBackgroundTransparent: "Transparent",
+    relationsTypeLegend: " Shows the Relations Distribution in the Model",
 
     ruleConformance: "Ruleconformance",
     structureQualitiy: "Structurequality",

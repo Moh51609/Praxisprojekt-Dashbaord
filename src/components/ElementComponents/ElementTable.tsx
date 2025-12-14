@@ -37,7 +37,25 @@ export default function ElementTable({ data }: { data: any[] }) {
 
   const elements = (data ?? []).filter((e) => {
     const clean = e.type.replace("uml:", "").replace("sysml:", "");
-    return ALLOWED_TYPES.includes(clean);
+    function isValidProperty(e: any) {
+      if (!e || !e.name) return false;
+
+      const name = e.name.trim();
+
+      if (name === "" || name === "(Unbenannt)") return false;
+      if (name.startsWith("base_")) return false;
+
+      return true;
+    }
+
+    if (!ALLOWED_TYPES.includes(clean)) return false;
+
+    // 🔴 Property-Sonderfilter
+    if (clean === "Property") {
+      return isValidProperty(e);
+    }
+
+    return true;
   });
 
   const [filterType, setFilterType] = useState("all");
@@ -121,8 +139,8 @@ export default function ElementTable({ data }: { data: any[] }) {
             <TableRow>
               <TableHead>Name</TableHead>
               <TableHead>Typ</TableHead>
-              <TableHead>Package</TableHead>
-              <TableHead>Stereotyp</TableHead>
+              <TableHead>Package Path</TableHead>
+
               <TableHead className="text-right">Attribute</TableHead>
               <TableHead className="text-right">Ports</TableHead>
               <TableHead className="text-right">Connectors</TableHead>
@@ -141,11 +159,17 @@ export default function ElementTable({ data }: { data: any[] }) {
 
                   <TableCell>{e.packagePath}</TableCell>
 
-                  <TableCell>{e.stereotype || "—"}</TableCell>
+                  <TableCell className="text-right">
+                    {e.attributes?.length ?? 0}
+                  </TableCell>
 
-                  <TableCell className="text-right">{e.attributes}</TableCell>
-                  <TableCell className="text-right">{e.ports}</TableCell>
-                  <TableCell className="text-right">{e.connectors}</TableCell>
+                  <TableCell className="text-right">
+                    {e.ports?.length ?? 0}
+                  </TableCell>
+
+                  <TableCell className="text-right">
+                    {e.connectors?.length ?? 0}
+                  </TableCell>
                 </TableRow>
               ))
             ) : (

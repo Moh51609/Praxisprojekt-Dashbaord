@@ -24,7 +24,7 @@ export default function RuleComplianceChart({ rules }: { rules: any[] }) {
   const COLORS = [accent, "#ef4444"];
 
   return (
-    <section className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm">
+    <section className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm flex flex-col justify-between">
       <div className="flex justify-between items-center mb-2">
         <h2 className="text-md font-semibold text-gray-800 dark:text-gray-100 flex items-center gap-2">
           <Scale className="h-5 w-5" style={{ color: accent }} />
@@ -33,7 +33,6 @@ export default function RuleComplianceChart({ rules }: { rules: any[] }) {
       </div>
 
       <div className="flex flex-row items-center gap-6">
-        {/* 🔹 Kreisdiagramm mit Prozentwert in der Mitte */}
         <div className="relative w-1/2 flex justify-center">
           <ResponsiveContainer width="100%" height={200}>
             <PieChart>

@@ -9,6 +9,7 @@ import { useEffect, useState } from "react";
 import HomeRedirect from "./page";
 import SearchOverlay from "@/components/Search/SearchOverlay";
 import TreeOverlay from "@/components/TreeComponents/TreeOverlay";
+import { ModelProvider } from "@/context/ModelContext";
 
 const montserrat = Montserrat({
   subsets: ["latin"],
@@ -91,31 +92,33 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           enableSystem
           disableTransitionOnChange
         >
-          <div
-            style={{ ["--sidebar" as any]: "clamp(240px, 30vw, 320px)" }}
-            className="grid min-h-screen grid-cols-[var(--sidebar)_minmax(0,1fr)]"
-          >
-            {/* Sidebar */}
-            <aside className="hidden bg-white dark:bg-gray-800 md:block">
-              <div className="sticky top-0 h-screen overflow-y-auto">
-                <Sidebar />
-              </div>
-            </aside>
+          <ModelProvider>
+            <div
+              style={{ ["--sidebar" as any]: "clamp(240px, 30vw, 320px)" }}
+              className="grid min-h-screen grid-cols-[var(--sidebar)_minmax(0,1fr)]"
+            >
+              {/* Sidebar */}
+              <aside className="hidden bg-white dark:bg-gray-800 md:block">
+                <div className="sticky top-0 h-screen overflow-y-auto">
+                  <Sidebar />
+                </div>
+              </aside>
 
-            {/* Inhalt */}
-            <div className="flex min-w-0 flex-col">
-              <main
-                className="relative mx-auto w-full flex-1 text-gray-900 dark:text-gray-50"
-                style={{
-                  backgroundColor: "transparent", // ✅ wichtig
-                }}
-              >
-                {children}
-              </main>
-              <SearchOverlay />
-              <TreeOverlay tree={treeData} />
+              {/* Inhalt */}
+              <div className="flex min-w-0 flex-col">
+                <main
+                  className="relative mx-auto w-full flex-1 text-gray-900 dark:text-gray-50"
+                  style={{
+                    backgroundColor: "transparent", // ✅ wichtig
+                  }}
+                >
+                  {children}
+                </main>
+                <SearchOverlay />
+                <TreeOverlay tree={treeData} />
+              </div>
             </div>
-          </div>
+          </ModelProvider>
         </ThemeProvider>
       </body>
     </html>

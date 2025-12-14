@@ -30,18 +30,18 @@ export default function DiagramTypeCoverageTable({ data }: { data: any }) {
 
   // Die Zieltyp-Liste
   const diagramTypes = [
-    "Block Definition Diagram",
-    "Internal Block Diagram",
-    "Use Case Diagram",
-    "Requirement Diagram",
-    "Parametric Diagram",
-    "Activity Diagram",
-    "Sequence Diagram",
-    "State Machine Diagram",
-    "Package Diagram",
-    "Profile Diagram",
-    "Deployment Diagram",
-    "Component Diagram",
+    "Block Definition",
+    "Internal Block",
+    "Use Case",
+    "Requirement",
+    "Parametric",
+    "Activity",
+    "Sequence",
+    "State Machine",
+    "Package",
+    "Profile",
+    "Deployment",
+    "Component",
   ];
 
   // Mapping Ergebnis
@@ -59,24 +59,19 @@ export default function DiagramTypeCoverageTable({ data }: { data: any }) {
     const name = d.name ?? "Unbenanntes Diagramm";
 
     if (type.includes("block definition"))
-      pushTo(diagramMap, "Block Definition Diagram", name);
+      pushTo(diagramMap, "Block Definition", name);
     if (type.includes("internal block"))
-      pushTo(diagramMap, "Internal Block Diagram", name);
-    if (type.includes("use case")) pushTo(diagramMap, "Use Case Diagram", name);
-    if (type.includes("requirement"))
-      pushTo(diagramMap, "Requirement Diagram", name);
-    if (type.includes("parametric"))
-      pushTo(diagramMap, "Parametric Diagram", name);
-    if (type.includes("activity")) pushTo(diagramMap, "Activity Diagram", name);
-    if (type.includes("sequence")) pushTo(diagramMap, "Sequence Diagram", name);
-    if (type.includes("state"))
-      pushTo(diagramMap, "State Machine Diagram", name);
-    if (type.includes("package")) pushTo(diagramMap, "Package Diagram", name);
-    if (type.includes("profile")) pushTo(diagramMap, "Profile Diagram", name);
-    if (type.includes("deployment"))
-      pushTo(diagramMap, "Deployment Diagram", name);
-    if (type.includes("component"))
-      pushTo(diagramMap, "Component Diagram", name);
+      pushTo(diagramMap, "Internal Block", name);
+    if (type.includes("use case")) pushTo(diagramMap, "Use Case", name);
+    if (type.includes("requirement")) pushTo(diagramMap, "Requirement", name);
+    if (type.includes("parametric")) pushTo(diagramMap, "Parametric", name);
+    if (type.includes("activity")) pushTo(diagramMap, "Activity", name);
+    if (type.includes("sequence")) pushTo(diagramMap, "Sequence", name);
+    if (type.includes("state")) pushTo(diagramMap, "State Machine", name);
+    if (type.includes("package")) pushTo(diagramMap, "Package", name);
+    if (type.includes("profile")) pushTo(diagramMap, "Profile", name);
+    if (type.includes("deployment")) pushTo(diagramMap, "Deployment", name);
+    if (type.includes("component")) pushTo(diagramMap, "Component", name);
   });
 
   const rows = diagramTypes.map((type) => ({
@@ -86,7 +81,7 @@ export default function DiagramTypeCoverageTable({ data }: { data: any }) {
   }));
 
   return (
-    <section className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-6">
+    <section className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-6 flex flex-col justify-between">
       <h2 className="text-md font-semibold mb-4 text-gray-800 dark:text-gray-100 flex items-center gap-2">
         <Layers className="h-5 w-5" style={{ color: accent }} />
         {translations[language].diagramTypeInModel}
@@ -95,7 +90,7 @@ export default function DiagramTypeCoverageTable({ data }: { data: any }) {
       <div className="overflow-x-auto">
         <Table>
           <TableHeader>
-            <TableRow className="border-b border-gray-200 dark:border-gray-700">
+            <TableRow className="border-b  border-gray-200 dark:border-gray-700">
               <TableHead className="w-48">
                 {" "}
                 {translations[language].diagramType}
@@ -117,7 +112,7 @@ export default function DiagramTypeCoverageTable({ data }: { data: any }) {
                 key={row.type}
                 className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
               >
-                <TableCell className="font-medium text-gray-800 dark:text-gray-100">
+                <TableCell className=" py-3 font-medium text-gray-800 dark:text-gray-100">
                   {row.type}
                 </TableCell>
                 <TableCell className="text-center">

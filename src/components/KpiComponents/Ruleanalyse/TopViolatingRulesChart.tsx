@@ -135,7 +135,7 @@ export default function TopViolatingRulesChart({ rules }: { rules: any[] }) {
                 <ResponsiveContainer width="100%" height="100%">
                   <ComposedChart
                     data={data}
-                    margin={{ top: 10, right: 30, left: -30, bottom: 0 }}
+                    margin={{ top: 10, right: -30, left: -30, bottom: 0 }}
                   >
                     <XAxis
                       dataKey="name"

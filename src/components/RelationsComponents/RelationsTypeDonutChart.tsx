@@ -118,7 +118,7 @@ export default function RelationTypeDonutChart({
       </div>
 
       <p className="text-xs text-gray-500 dark:text-gray-400 mt-3 text-center">
-        Zeigt die Verteilung der Beziehungstypen im Modell.
+        {translations[language].relationsTypeLegend}
       </p>
     </section>
   );

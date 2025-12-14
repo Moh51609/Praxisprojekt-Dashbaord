@@ -14,10 +14,11 @@ import { useTheme } from "next-themes";
 import { Compass } from "lucide-react";
 import * as d3 from "d3";
 import { useChartZoom } from "@/hooks/useChartZoom";
-import { useRef, useState } from "react";
+import { useRef, useState, useMemo, useEffect } from "react";
 import { useChartBackground } from "@/hooks/useChartBackground";
 import { useLanguage } from "@/hooks/useLanguage";
 import { translations } from "@/lib/i18n";
+import { UmlElement } from "@/types/model";
 
 export default function SystemCoverageRadarChart({
   data,
@@ -34,38 +35,102 @@ export default function SystemCoverageRadarChart({
   const chartZoom = useChartZoom();
   const { language } = useLanguage();
 
-  // 🔹 Alle IDs, die in Relationen vorkommen
+  /* 🔍 Zoom bleibt */
+  useEffect(() => {
+    if (!svgRef.current || !chartZoom) return;
+
+    const svg = d3.select(svgRef.current);
+    const zoom = d3
+      .zoom<SVGSVGElement, unknown>()
+      .scaleExtent([0.5, 3])
+      .on("zoom", (event) => setTransform(event.transform));
+
+    svg.call(zoom as any);
+    return () => {
+      svg.on(".zoom", null);
+    };
+  }, [chartZoom]);
+
   const relatedIds = new Set(
     relations?.flatMap((r) => [r.source, r.target]) ?? []
   );
 
-  // 🔹 Definiere Kategorien + Suchmuster (regex für flexible Erkennung)
-  const typeMap: Record<string, RegExp[]> = {
-    Block: [/block/i, /sysmlblock/i, /bdd/i, /blockdefinition/i],
-    Requirement: [/requirement/i, /anforderung/i],
-    Port: [/port/i],
-    Connector: [/connector/i, /connection/i, /link/i],
-    Package: [/package/i, /pkg/i],
-  };
+  /* =================================================
+     ✅ KORREKTE COVERAGE – angepasst an XML + ParsedModel
+     ================================================= */
+  const coverage = useMemo(() => {
+    const elements = data?.elements ?? [];
+    const rels = relations ?? [];
 
-  // 🔹 Berechne pro Kategorie die Abdeckungsquote (%)
-  const coverage = Object.entries(typeMap).map(([category, patterns]) => {
-    const all = (data?.elements ?? []).filter((e: any) =>
-      patterns.some((p) => p.test(e.type ?? ""))
+    /* 🔹 BLOCKS (uml:Class mit Ports oder Block-Stereotyp) */
+    const blocks = data.elements.filter(
+      (e: UmlElement) => e.type === "uml:Class"
     );
-    const linked = all.filter((e: any) => relatedIds.has(e.id));
-    const ratio = all.length > 0 ? (linked.length / all.length) * 100 : 0;
-
-    return { category, abdeckung: Math.round(ratio) };
-  });
-
-  // 🔹 Falls keine Daten erkannt wurden → Debug-Info
-  if (!coverage.some((c) => c.abdeckung > 0)) {
-    console.warn(
-      "⚠️ Keine passenden Typen im Radar gefunden. Typnamen prüfen:",
-      data?.elements?.slice(0, 5)
+    const connectedBlocks = blocks.filter((b: UmlElement) =>
+      relations.some((r) => r.source === b.id || r.target === b.id)
     );
-  }
+
+    console.log("Blocks gesamt:", blocks.length);
+    console.log("Verbundene Blocks:", connectedBlocks.length);
+    /* 🔹 REQUIREMENTS */
+    const requirements = elements.filter((e: any) =>
+      e.type?.toLowerCase().includes("requirement")
+    );
+    const connectedRequirements = requirements.filter((r: any) =>
+      relatedIds.has(r.id)
+    );
+
+    /* 🔹 PORTS (über owning Block!) */
+    const ports = blocks.flatMap((b: any) => b.ports ?? []);
+    const connectedPorts = blocks
+      .filter((b: any) => relatedIds.has(b.id))
+      .flatMap((b: any) => b.ports ?? []);
+
+    /* 🔹 CONNECTORS */
+    const connectors = rels;
+    const validConnectors = connectors.filter((r: any) => r.source && r.target);
+
+    /* 🔹 PACKAGES */
+    const packages = elements.filter((e: any) => e.type === "uml:Package");
+    const nonEmptyPackages = packages.filter((p: any) =>
+      elements.some((e: any) => e.package === p.name)
+    );
+
+    return [
+      {
+        category: "Block",
+        abdeckung: blocks.length
+          ? Math.round((connectedBlocks.length / blocks.length) * 100)
+          : 0,
+      },
+      {
+        category: "Requirement",
+        abdeckung: requirements.length
+          ? Math.round(
+              (connectedRequirements.length / requirements.length) * 100
+            )
+          : 0,
+      },
+      {
+        category: "Port",
+        abdeckung: ports.length
+          ? Math.round((connectedPorts.length / ports.length) * 100)
+          : 0,
+      },
+      {
+        category: "Connector",
+        abdeckung: connectors.length
+          ? Math.round((validConnectors.length / connectors.length) * 100)
+          : 0,
+      },
+      {
+        category: "Package",
+        abdeckung: packages.length
+          ? Math.round((nonEmptyPackages.length / packages.length) * 100)
+          : 0,
+      },
+    ];
+  }, [data, relations, relatedIds]);
 
   return (
     <section className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-6">
@@ -74,8 +139,8 @@ export default function SystemCoverageRadarChart({
         {translations[language].systemicCoverage}
       </h2>
 
-      <div className="relative rounded-2xl dark:bg-gray-800 bg-gray-50 p-4">
-        {/* Hintergrund-Gitter */}
+      <div className="relative rounded-2xl p-4">
+        {/* ✅ ChartBackground bleibt */}
         <div
           className="absolute inset-0 rounded-2xl pointer-events-none transition-colors duration-300"
           style={{
@@ -104,60 +169,53 @@ export default function SystemCoverageRadarChart({
             backgroundSize: chartBackground === "grid" ? "24px 24px" : "auto",
             backdropFilter:
               chartBackground === "transparent" ? "blur(4px)" : "none",
-            boxShadow:
-              chartBackground === "transparent"
-                ? "inset 0 0 20px rgba(255,255,255,0.05)"
-                : "none",
           }}
         />
 
         <svg ref={svgRef} width="100%" height="250">
           <g transform={transform.toString()}>
             <foreignObject width="100%" height="100%">
-              <div style={{ width: "100%", height: "100%" }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <RadarChart data={coverage}>
-                    <PolarGrid
-                      stroke={theme === "dark" ? "#374151" : "#e5e7eb"}
-                      gridType="polygon"
-                    />
-                    <PolarAngleAxis
-                      dataKey="category"
-                      tick={{
-                        fill: theme === "dark" ? "#D1D5DB" : "#111827",
-                        fontSize: 12,
-                      }}
-                    />
-                    <PolarRadiusAxis
-                      angle={90}
-                      domain={[0, 100]}
-                      tick={{
-                        fill: theme === "dark" ? "#9CA3AF" : "#4B5563",
-                        fontSize: 10,
-                      }}
-                    />
-                    <Tooltip
-                      content={({ payload }) => {
-                        if (!payload?.length) return null;
-                        const { category, abdeckung } = payload[0].payload;
-                        return (
-                          <div className="  bg-white border border-gray-200 text-black p-2 rounded shadow text-xs">
-                            <strong>{category}</strong>
-                            <div className="text-gray-600">{abdeckung}</div>
-                          </div>
-                        );
-                      }}
-                    />
-                    <Radar
-                      name="Abdeckung"
-                      dataKey="abdeckung"
-                      stroke={accent}
-                      fill={accent}
-                      fillOpacity={0.45}
-                    />
-                  </RadarChart>
-                </ResponsiveContainer>
-              </div>
+              <ResponsiveContainer width="100%" height="100%">
+                <RadarChart data={coverage}>
+                  <PolarGrid
+                    stroke={theme === "dark" ? "#374151" : "#e5e7eb"}
+                    gridType="polygon"
+                  />
+                  <PolarAngleAxis
+                    dataKey="category"
+                    tick={{
+                      fill: theme === "dark" ? "#D1D5DB" : "#111827",
+                      fontSize: 12,
+                    }}
+                  />
+                  <PolarRadiusAxis
+                    angle={90}
+                    domain={[0, 100]}
+                    tick={{
+                      fill: theme === "dark" ? "#9CA3AF" : "#4B5563",
+                      fontSize: 10,
+                    }}
+                  />
+                  <Tooltip
+                    content={({ payload }) => {
+                      if (!payload?.length) return null;
+                      const { category, abdeckung } = payload[0].payload;
+                      return (
+                        <div className="bg-white border border-gray-200 text-black p-2 rounded shadow text-xs">
+                          <strong>{category}</strong>
+                          <div className="text-gray-600">{abdeckung} %</div>
+                        </div>
+                      );
+                    }}
+                  />
+                  <Radar
+                    dataKey="abdeckung"
+                    stroke={accent}
+                    fill={accent}
+                    fillOpacity={0.45}
+                  />
+                </RadarChart>
+              </ResponsiveContainer>
             </foreignObject>
           </g>
         </svg>

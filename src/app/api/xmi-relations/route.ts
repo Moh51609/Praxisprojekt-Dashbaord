@@ -112,6 +112,67 @@ export async function GET() {
 
     collectNames(model);
 
+    function collectMdAssociations(node: any) {
+      if (!node || typeof node !== "object") return;
+
+      // MagicDraw / Cameo Association
+      if (node["elementClass"] === "Association") {
+        const id = node["xmi:id"];
+
+        const source =
+          node["associationFirstEndID"]?.["xmi:idref"] ??
+          node["associationFirstEndID"]?.["idref"];
+
+        const target =
+          node["associationSecondEndID"]?.["xmi:idref"] ??
+          node["associationSecondEndID"]?.["idref"];
+
+        if (source && target) {
+          relations.push({
+            id,
+            type: "md:Association",
+            source,
+            target,
+            name: "Association",
+          });
+        }
+      }
+
+      for (const key of Object.keys(node)) {
+        const val = node[key];
+        if (Array.isArray(val)) val.forEach(collectMdAssociations);
+        else if (typeof val === "object") collectMdAssociations(val);
+      }
+    }
+    collectMdAssociations(model);
+
+    function collectItemFlows(node: any) {
+      if (!node || typeof node !== "object") return;
+
+      if (node["elementClass"] === "ItemFlow") {
+        const source = node["linkFirstEndID"]?.["xmi:idref"];
+        const target = node["linkSecondEndID"]?.["xmi:idref"];
+
+        if (source && target) {
+          relations.push({
+            id: node["xmi:id"],
+            type: "md:ItemFlow",
+            source,
+            target,
+            name: "ItemFlow",
+          });
+        }
+      }
+
+      for (const key of Object.keys(node)) {
+        const val = node[key];
+        if (Array.isArray(val)) val.forEach(collectItemFlows);
+        else if (typeof val === "object") collectItemFlows(val);
+      }
+    }
+
+    collectItemFlows(model);
+
     const propertyToType: Record<string, string> = {};
 
     function collectTypeRefs(node: any) {

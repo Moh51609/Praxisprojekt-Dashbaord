@@ -75,7 +75,7 @@ export default function SmellSeverityBarChart({ smells }: { smells: any[] }) {
   const gridColor = theme === "dark" ? "#374151" : "#e5e7eb";
 
   return (
-    <section className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-6">
+    <section className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-6 flex flex-col justify-between">
       {/* 🔹 Titel */}
       <h2 className="text-md font-semibold mb-4 text-gray-800 dark:text-gray-100 flex items-center gap-2">
         <ThermometerSun className="h-5 w-5" style={{ color: accent }} />
@@ -134,7 +134,6 @@ export default function SmellSeverityBarChart({ smells }: { smells: any[] }) {
                       data={data}
                       margin={{ top: 10, right: 20, left: -20, bottom: 10 }}
                     >
-                      <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
                       <XAxis
                         dataKey="name"
                         tick={{ fill: axisColor, fontSize: 12 }}

@@ -18,6 +18,8 @@ export default function RelationsPage() {
   const pageBackground = usePageBackground();
   const { language } = useLanguage();
   const [mounted, setMounted] = useState(false);
+  const [elements, setElements] = useState<any[]>([]);
+
   useEffect(() => setMounted(true), []);
   useEffect(() => {
     fetch("/api/xmi-relations")
@@ -39,6 +41,16 @@ export default function RelationsPage() {
       .catch((e) => setError(String(e)));
   }, []);
 
+  useEffect(() => {
+    fetch("/api/xmi-elements")
+      .then((r) => r.json())
+      .then((j) => {
+        if (!("error" in j)) {
+          setElements(j.elements);
+        }
+      });
+  }, []);
+
   if (!mounted) {
     return <div className="p-10 space-y-2" />; // leeres Layout, keine Hydration konflikte
   }
@@ -58,23 +70,41 @@ export default function RelationsPage() {
     "Satisfy",
   ];
 
+  const totalRelations = relations.length;
+
   const kpiItems = [
     {
       key: "totalRelations",
       title: translations[language].totalRelations,
-      value: relations.length,
+      value: totalRelations,
+      percent: 100,
       icon: <Link2 className="h-5 w-5" />,
     },
-    ...importantTypes.map((type) => ({
-      key: type,
-      title: type,
-      value: relationTypeCounts[type] ?? 0,
-      icon: <GitBranch className="h-5 w-5" />,
-    })),
+    ...importantTypes.map((type) => {
+      const count = relationTypeCounts[type] ?? 0;
+      const percent =
+        totalRelations > 0 ? Math.round((count / totalRelations) * 100) : 0;
+
+      return {
+        key: type,
+        title: type,
+        value: count,
+        percent,
+        icon: <GitBranch className="h-5 w-5" />,
+      };
+    }),
     {
       key: "relationTypes",
       title: translations[language].coveredRelations,
       value: new Set(relations.map((r) => r.type)).size,
+      percent:
+        totalRelations > 0
+          ? Math.round(
+              (new Set(relations.map((r) => r.type)).size /
+                importantTypes.length) *
+                100
+            )
+          : 0,
       icon: <GitBranch className="h-5 w-5" />,
     },
   ];
@@ -104,6 +134,7 @@ export default function RelationsPage() {
                 title={item.title}
                 value={item.value}
                 icon={item.icon}
+                percent={item.percent}
               />
             ))}
           </div>
@@ -112,7 +143,7 @@ export default function RelationsPage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-1 [@media(min-width:1350px)]:grid-cols-2 gap-4">
-          <RelationsGraph data={relations} />
+          <RelationsGraph relations={relations} elements={elements} />
 
           <RelationsHeatmap relations={relations} />
         </div>
@@ -125,10 +156,12 @@ function KpiCard({
   title,
   value,
   icon,
+  percent,
 }: {
   title: string;
   value: number | string;
   icon: React.ReactNode;
+  percent: number;
 }) {
   const accentColor = useAccentColor();
   const { language } = useLanguage();
@@ -143,12 +176,8 @@ function KpiCard({
       <div className="mt-1 text-3xl dark:text-white font-bold text-gray-900">
         {value}
       </div>
-      <div className="flex gap-1 items-center ">
-        <ArrowUp className="h-3 w-3 text-green-500" />
-        <div className="font-bold text-xs text-green-500">5</div>
-        <div className="text-xs text-gray-500 font-medium">
-          {translations[language].sinceLastCommit}
-        </div>
+      <div className="text-xs text-gray-500 dark:text-gray-400">
+        {`${percent}% des Modells`}
       </div>
     </div>
   );

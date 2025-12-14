@@ -6,7 +6,7 @@ import {
   Bar,
   XAxis,
   YAxis,
-  Tooltip,
+  Tooltip as Rechartstooltip,
   CartesianGrid,
   Cell,
   ReferenceLine,
@@ -16,11 +16,12 @@ import { useTheme } from "next-themes";
 import { useChartBackground } from "@/hooks/useChartBackground";
 import { useLanguage } from "@/hooks/useLanguage";
 import { translations } from "@/lib/i18n";
-import { ChartBar } from "lucide-react";
+import { ChartBar, Info } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useChartZoom } from "@/hooks/useChartZoom";
 import * as d3 from "d3";
 import { color } from "framer-motion";
+import * as Tooltip from "@radix-ui/react-tooltip";
 
 export default function RuleViolationsByCategoryChart({
   rules,
@@ -54,7 +55,7 @@ export default function RuleViolationsByCategoryChart({
 
     const zoom = d3
       .zoom<SVGSVGElement, unknown>()
-      .scaleExtent([0.5, 3]) // Zoom-Level zwischen 0.5x und 3x
+      .scaleExtent([0.5, 3])
       .on("zoom", (event) => {
         setTransform(event.transform);
       });
@@ -62,10 +63,9 @@ export default function RuleViolationsByCategoryChart({
     svg.call(zoom as any);
 
     return () => {
-      svg.on(".zoom", null); // Cleanup bei Unmount
+      svg.on(".zoom", null);
     };
   }, [chartZoom]);
-  // 🔹 Verstöße nach Kategorie zählen
   const categoryCounts: Record<string, number> = {};
   rules.forEach((r) => {
     const category = categoryMap[r.id] || "Andere";
@@ -84,22 +84,35 @@ export default function RuleViolationsByCategoryChart({
     Traceability: "#8b5cf6",
     Diagramme: "#ef4444",
     Andere: accentColor,
-    // ...
   };
-
-  // 🔹 Farben für Balken
 
   return (
     <section className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-6 relative">
-      {/* Titel */}
       <div className="flex flex-row justify-between items-center mb-4">
         <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100 flex items-center gap-2">
           <ChartBar className="h-5 w-5" style={{ color: accentColor }} />
           {translations[language].ruleViolationsByCategory}
+          <Tooltip.Provider>
+            <Tooltip.Root>
+              <Tooltip.Trigger asChild>
+                <Info className="h-4 w-4 text-gray-500 hover:text-gray-800 dark:text-gray-300 cursor-pointer" />
+              </Tooltip.Trigger>
+              <Tooltip.Portal>
+                <Tooltip.Content className="max-w-xs text-xs dark:bg-gray-700 bg-gray-300 rounded-xl p-2">
+                  R1 - {translations[language].structure}
+                  <br /> R2 - {translations[language].structure}
+                  <br /> R3 - {translations[language].naming}
+                  <br /> R4 - {translations[language].naming}
+                  <br /> R5 - {translations[language].structure}
+                  <br /> R6 - {translations[language].connections}
+                  <br /> R7 – {translations[language].traceability}
+                </Tooltip.Content>
+              </Tooltip.Portal>
+            </Tooltip.Root>
+          </Tooltip.Provider>
         </h2>
       </div>
 
-      {/* Chart */}
       <div className="relative rounded-2xl p-2">
         <div
           className="absolute inset-0 rounded-2xl pointer-events-none transition-colors duration-300"
@@ -165,7 +178,7 @@ export default function RuleViolationsByCategoryChart({
                       stroke={accentColor}
                       strokeWidth={1.2}
                     />
-                    <Tooltip
+                    <Rechartstooltip
                       content={({ payload }) => {
                         if (!payload?.length) return null;
                         const { name, value } = payload[0].payload;
@@ -189,8 +202,6 @@ export default function RuleViolationsByCategoryChart({
           </g>
         </svg>
       </div>
-
-      {/* Beschreibung */}
     </section>
   );
 }

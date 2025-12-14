@@ -282,7 +282,6 @@ export default function SettingsPage() {
                   <SelectItem value="relations">
                     {translations[language].relations}
                   </SelectItem>
-                  <SelectItem value="validation">ValidationSuits</SelectItem>
                 </SelectContent>
               </Select>
             </div>

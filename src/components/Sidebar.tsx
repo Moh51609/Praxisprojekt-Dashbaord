@@ -67,12 +67,7 @@ export default function Sidebar() {
           href="/Relations"
           active={pathname === "/Relations"}
         />
-        <Item
-          icon={<Bug size={18} />}
-          label="Validation Suits"
-          href="/validationSuits"
-          active={pathname === "/validationSuits"}
-        />
+
         <div className="px-2 mt-2">
           <div className="flex items-center gap-2 bg-gray-100 dark:bg-gray-700 rounded-lg px-2 py-2 relative">
             <Search className="text-gray-500" size={16} />

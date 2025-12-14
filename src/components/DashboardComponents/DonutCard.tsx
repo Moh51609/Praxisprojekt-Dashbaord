@@ -12,6 +12,8 @@ export default function DonutCard({
   title,
   icon: Icon,
   data,
+  name,
+  total,
   colors = [
     "#3b82f6", // Blau
     "#ec4899", // Indigo
@@ -23,7 +25,9 @@ export default function DonutCard({
   ],
 }: {
   title: string;
+  name: string;
   icon: LucideIcon;
+  total: number;
   data: { name: string; value: number }[];
   colors?: string[];
 }) {
@@ -36,10 +40,10 @@ export default function DonutCard({
 
   function cleanDiagramName(name: string) {
     return name
-      .replace(/^SysML\s*/i, "") // Entfernt "SysML" am Anfang
-      .replace(/Diagram/i, "") // Entfernt "Diagram"
-      .replace(/\s+/g, " ") // Mehrere Leerzeichen reduzieren
-      .trim(); // Trimmen
+      .replace(/^SysML\s*/i, "")
+      .replace(/Diagram/i, "")
+      .replace(/\s+/g, " ")
+      .trim();
   }
 
   useEffect(() => {
@@ -75,13 +79,11 @@ export default function DonutCard({
         <div className="text-4xl font-bold text-gray-900 dark:text-gray-200">
           {data.length}
         </div>
-        <div className="flex gap-1 items-center ">
-          <ArrowUp className="h-3 w-3 text-green-500" />
-          <div className="font-bold text-xs text-green-500">5</div>
-          <div className="text-xs text-gray-500 font-medium">
-            {translations[language].sinceLastCommit}{" "}
+        {typeof total === "number" && (
+          <div className="text-xs text-gray-500 dark:text-gray-400">
+            bei insgeamt {total} {name}
           </div>
-        </div>
+        )}
       </div>
       <div className="flex flex-row  items-center justify-between h-full flex-1">
         {/* 🟩 Linke Seite: Legende */}

@@ -51,21 +51,35 @@ import SmellSeverityBarChart from "@/components/KpiComponents/ModelSmells/SmellS
 import RuleComplianceChart from "@/components/KpiComponents/Ruleanalyse/RuleComplianceChart";
 import { useModelRules } from "@/hooks/useModelRules";
 import OverallKpiTrendChart from "@/components/DashboardComponents/OverallKpiTrendChart";
+import UploadXmi from "@/components/UploadXmi";
+import { useModel } from "@/context/ModelContext";
 
 type CountByType = { name: string; value: number };
 
 export default function DashboardPage() {
-  const [data, setData] = useState<ParsedModel | null>(null);
+  const { model, setModel } = useModel();
+  const data = model;
+  const elements = data?.elements ?? [];
+  const relations = data?.relationships ?? [];
+  const typeCounts = elements.reduce((acc, el) => {
+    const clean = el.type.replace(/^uml:|^sysml:/, "");
+    acc[clean] = (acc[clean] ?? 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+  const diagramTypes = data?.diagramsByType ?? {};
+  const stats = {
+    total: elements.length,
+    distinctTypes: Object.keys(typeCounts).length,
+  };
+
   const [byType, setByType] = useState<CountByType[]>([]);
   const [error, setError] = useState<string | null>(null);
   const pageBackground = usePageBackground();
   const accessColor = useAccentColor();
   const { language } = useLanguage();
-  const [relations, setRelations] = useState<any[]>([]);
   const [smells, setSmells] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const { rules, error: rulesError } = useModelRules(data);
-
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -78,13 +92,22 @@ export default function DashboardPage() {
           name: "Struktur",
           value: data.metrics.associations + data.metrics.connectors,
         },
-        { name: "Vererbung", value: data.metrics.generalizations },
-        { name: "Abhängigkeiten", value: data.metrics.dependencies },
-        { name: "Traceability", value: data.metrics.abstraction ?? 0 },
-      ]
+        {
+          name: "Vererbung",
+          value: data.metrics.generalizations,
+        },
+        {
+          name: "Abhängigkeiten",
+          value: data.metrics.dependencies,
+        },
+        {
+          name: "Traceability",
+          value: data.metrics.abstraction ?? 0,
+        },
+      ].filter((r) => r.value > 0)
     : [];
 
-  console.log("📊 classStats:", data?.classStats?.slice(0, 5));
+  const totalRelations = relationsData.reduce((sum, r) => sum + r.value, 0);
 
   const topPorts =
     data?.classStats
@@ -100,9 +123,7 @@ export default function DashboardPage() {
           setError(j.error);
           return;
         }
-        setData(j);
 
-        // 1) Counter-Record aufbauen (explizit typisieren!)
         const countsByType: Record<string, number> = j.elements.reduce(
           (acc: Record<string, number>, e) => {
             acc[e.type] = (acc[e.type] ?? 0) + 1;
@@ -111,7 +132,6 @@ export default function DashboardPage() {
           {} as Record<string, number>
         );
 
-        // 2) In Array<{name, value}> umwandeln (Tupeltyp angeben!)
         const byTypeArr: CountByType[] = Object.entries(countsByType).map(
           ([name, value]: [string, number]) => ({ name, value })
         );
@@ -135,27 +155,42 @@ export default function DashboardPage() {
     }
     loadSmells();
   }, []);
+  const relationTypeCounts = relations.reduce((acc, r) => {
+    const cleanType = r.type?.replace(/^uml:|^sysml:/, "").trim();
+
+    if (!cleanType) return acc;
+
+    acc[cleanType] = (acc[cleanType] ?? 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+
+  const nonZeroRelationTypes = Object.entries(relationTypeCounts).filter(
+    ([, count]) => count > 0
+  );
+
+  const relationshipTypeCount = nonZeroRelationTypes.length;
+
+  const totalStructuralElements = data
+    ? data.metrics.classes +
+      data.metrics.ports +
+      data.metrics.properties +
+      data.metrics.connectors
+    : 0;
 
   useEffect(() => {
-    fetch("/api/xmi-relations")
-      .then((r) => r.json())
-      .then((j) => {
-        if ("error" in j) setError(j.error);
-        else {
-          setRelations(j.relations);
+    if (model) return; // 🔒 schon geladen (z.B. durch Upload)
 
-          const typeCount = j.relations.reduce(
-            (acc: Record<string, number>, r: any) => {
-              acc[r.type] = (acc[r.type] ?? 0) + 1;
-              return acc;
-            },
-            {}
-          );
-          console.log("🔍 Beziehungstypen in API:", typeCount);
+    fetch("/api/xmi")
+      .then((r) => r.json())
+      .then((j: ParsedModel | { error: string }) => {
+        if ("error" in j) {
+          setError(j.error);
+          return;
         }
+        setModel(j); // 🔥 GLOBAL setzen
       })
       .catch((e) => setError(String(e)));
-  }, []);
+  }, [model, setModel]);
 
   if (!mounted) return null;
   return (
@@ -163,11 +198,12 @@ export default function DashboardPage() {
       className="p-10 space-y-2 bg-gray-300 dark:bg-gray-900 dark:text-gray-50 transition-colors duration-300 min-w-[600px]"
       style={pageBackground}
     >
-      <header className="w-full ">
+      <header className="w-full flex flex-row justify-between">
         <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
           <LayoutDashboard className="h-6 w-6" style={{ color: accessColor }} />
           {translations[language].overview}
         </h1>
+        <UploadXmi onLoaded={(model) => setModel(model)} />
       </header>
 
       {error && (
@@ -182,37 +218,37 @@ export default function DashboardPage() {
           <div className="grid grid-cols-1  [@media(min-width:1600px)]:grid-cols-[2fr_1fr]  gap-4 items-stretch py-4 justify-center  ">
             <section className="grid lg:grid-cols-3 md:grid-cols-2 sm:grid-cols-1 gap-4 w-full ">
               <KpiCard
-                data={data}
+                total={totalStructuralElements}
                 title={translations[language].blocks}
                 value={data.metrics.classes}
                 icon={Cuboid}
               />
               <KpiCard
-                data={data}
+                total={totalStructuralElements}
                 title={translations[language].association}
                 value={data.metrics.associations ?? "0"}
                 icon={Cable}
               />
               <KpiCard
-                data={data}
+                total={totalStructuralElements}
                 title={translations[language].generalization}
                 value={data.metrics.generalizations ?? "0"}
                 icon={Dna}
               />
               <KpiCard
-                data={data}
+                total={totalStructuralElements}
                 title={translations[language].ports}
                 value={data.metrics.ports ?? "0"}
                 icon={BetweenHorizonalEnd}
               />
               <KpiCard
-                data={data}
+                total={totalStructuralElements}
                 title={translations[language].useCases}
                 value={data.metrics.useCases ?? "0"}
                 icon={ChartNetwork}
               />
               <KpiCard
-                data={data}
+                total={totalStructuralElements}
                 title={translations[language].diagrams}
                 value={data.metrics.diagramsTotal ?? "0"}
                 icon={ChartPie}
@@ -229,6 +265,11 @@ export default function DashboardPage() {
                       value,
                     })
                   )}
+                  name={translations[language].diagrams}
+                  total={Object.values(data.diagramsByType).reduce(
+                    (a, b) => a + b,
+                    0
+                  )}
                   icon={LifeBuoy}
                 />
               </div>
@@ -239,9 +280,11 @@ export default function DashboardPage() {
             <section className="gap-4 items-stretch h-full w-full ">
               <div className="w-full">
                 <DonutCard
+                  name={translations[language].relations}
                   title={translations[language].relationshipTypes}
                   data={relationsData}
                   icon={LifeBuoy}
+                  total={totalRelations}
                 />
               </div>
             </section>

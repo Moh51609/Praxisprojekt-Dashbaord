@@ -94,6 +94,8 @@ export function evaluateModelSmellsPure(
         name: "Large Package",
         description: `Package "${pkg}" enthält ${count} Elemente.`,
         severity: count > 25 ? "High" : "Medium",
+        element: pkg,
+
         packagePath: pkg,
       });
     }
@@ -110,6 +112,7 @@ export function evaluateModelSmellsPure(
         severity:
           (c.ports ?? 0) > 20 || (c.attributes ?? 0) > 25 ? "High" : "Medium",
         element: c.className,
+        packagePath: c.className ?? "Root",
       });
     }
   });
@@ -122,12 +125,19 @@ export function evaluateModelSmellsPure(
   });
   nameMap.forEach((ids, key) => {
     if (ids.length > 1) {
-      smells.push({
-        id: "S4",
-        category: "Redundancy",
-        name: "Duplicate Names",
-        description: `Mehrere Elemente mit gleichem Namen/Typ (${key}) gefunden.`,
-        severity: "Medium",
+      ids.forEach((id) => {
+        const el = elements.find((e) => e.id === id);
+        if (!el) return;
+
+        smells.push({
+          id: "S4",
+          category: "Redundancy",
+          name: "Duplicate Names",
+          description: `Mehrere Elemente mit gleichem Namen "${el.name}".`,
+          severity: "Medium",
+          element: el.name,
+          packagePath: el.package ?? "Root",
+        });
       });
     }
   });
@@ -172,8 +182,10 @@ export function evaluateModelSmellsPure(
           id: "S5",
           category: "Redundancy",
           name: "Similar Names",
+          element: a.name,
           description: `Ähnliche Namen erkannt: "${a.name}" und "${b.name}".`,
           severity: similarity > 0.94 ? "Medium" : "Low",
+          packagePath: a.package,
         });
       }
     }
@@ -258,6 +270,8 @@ export function evaluateModelSmellsPure(
         name: "Empty Diagram",
         description: `Diagramm "${d.name}" enthält keine modellierten Elemente.`,
         severity: "Medium",
+        element: d.name ?? "(Connector)",
+        packagePath: "Root",
       });
     }
   });
@@ -299,6 +313,8 @@ export function evaluateModelSmellsPure(
       id: "S11",
       category: "Structure",
       name: "Model Depth Imbalance",
+      element: "Modell",
+      packagePath: "—",
       description: `${
         deepElements.length
       } Elemente sind deutlich tiefer verschachtelt als der Durchschnitt (${avgDepth.toFixed(
@@ -319,6 +335,8 @@ export function evaluateModelSmellsPure(
       smells.push({
         id: "S12",
         category: "Consistency",
+        element: "Modell",
+        packagePath: "—",
         name: "Redundant Relation",
         description: `Beziehung (${key}) tritt ${count}x auf.`,
         severity: "Low",
@@ -357,6 +375,8 @@ export function evaluateModelSmellsPure(
         name: "Requirement without Verification",
         description: `Requirement "${r.name}" hat keine Verify-Beziehung.`,
         severity: "Medium",
+        element: r.name,
+        packagePath: r.package ?? "Root",
       });
     }
   });
@@ -370,6 +390,8 @@ export function evaluateModelSmellsPure(
         name: "Element Without Stereotype",
         description: `Element "${e.name}" hat kein zugewiesenes Stereotyp.`,
         severity: "Low",
+        element: e.name,
+        packagePath: e.package ?? "Root",
       });
     }
   });
