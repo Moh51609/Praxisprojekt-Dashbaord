@@ -158,6 +158,17 @@ export default function DashboardPage() {
         <UploadXmi onLoaded={(model) => setModel(model)} />
       </header>
 
+      {!data && (
+        <div className="flex flex-col items-center justify-center h-[60vh] text-center">
+          <p className="text-lg font-medium text-gray-600 dark:text-gray-300 mb-4">
+            Bitte lade eine XML hoch
+          </p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            Nach dem Upload werden hier die Modell-KPIs und Analysen angezeigt.
+          </p>
+        </div>
+      )}
+
       {error && (
         <div className="rounded-xl border text-red-600">
           Fehler beim Laden: {error}
