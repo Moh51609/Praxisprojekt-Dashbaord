@@ -10,46 +10,19 @@ import { useLanguage } from "@/hooks/useLanguage";
 import { translations } from "@/lib/i18n";
 import RelationTypeDonutChart from "@/components/RelationsComponents/RelationsTypeDonutChart";
 import RelationsExportDropdown from "@/components/RelationsComponents/RelationsExportDropdown";
+import { useModel } from "@/context/ModelContext";
 
 export default function RelationsPage() {
-  const [relations, setRelations] = useState<any[]>([]);
   const [error, setError] = useState<string | null>(null);
   const accentColor = useAccentColor();
   const pageBackground = usePageBackground();
   const { language } = useLanguage();
   const [mounted, setMounted] = useState(false);
-  const [elements, setElements] = useState<any[]>([]);
+  const { model } = useModel();
 
+  const relations = model?.relationships ?? [];
+  const elements = model?.elements ?? [];
   useEffect(() => setMounted(true), []);
-  useEffect(() => {
-    fetch("/api/xmi-relations")
-      .then((r) => r.json())
-      .then((j) => {
-        if ("error" in j) setError(j.error);
-        else {
-          setRelations(j.relations);
-
-          const typeCount = j.relations.reduce(
-            (acc: Record<string, number>, r: any) => {
-              acc[r.type] = (acc[r.type] ?? 0) + 1;
-              return acc;
-            },
-            {}
-          );
-        }
-      })
-      .catch((e) => setError(String(e)));
-  }, []);
-
-  useEffect(() => {
-    fetch("/api/xmi-elements")
-      .then((r) => r.json())
-      .then((j) => {
-        if (!("error" in j)) {
-          setElements(j.elements);
-        }
-      });
-  }, []);
 
   if (!mounted) {
     return <div className="p-10 space-y-2" />; // leeres Layout, keine Hydration konflikte

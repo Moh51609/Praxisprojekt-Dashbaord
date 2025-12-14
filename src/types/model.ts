@@ -26,6 +26,7 @@ export type UmlElement = {
   attributes?: UmlAttribute[];
   ports?: UmlPort[];
   parentId?: string;
+  connectors?: string[]; // ✅ DAS FEHLTE
 };
 
 export type UmlRelationship = {

@@ -14,16 +14,17 @@ const ForceGraph2D = dynamic(
   () => import("react-force-graph-2d").then((m) => m.default || m),
   { ssr: false }
 );
-
 type Element = {
   id: string;
   name?: string;
   type?: string;
+  stereotype?: string;
+  parentId?: string;
 };
 
 type Relation = {
-  sourceName?: string;
-  targetName?: string;
+  source?: string; // ID
+  target?: string; // ID
   type?: string;
 };
 
@@ -34,6 +35,12 @@ const ALLOWED_TYPES = [
   "systemfunktion",
   "function",
 ];
+
+type GraphLink = {
+  source: string;
+  target: string;
+  type?: string;
+};
 
 export default function RelationsGraph({
   relations,
@@ -65,49 +72,84 @@ export default function RelationsGraph({
     return () => window.removeEventListener("resize", update);
   }, []);
 
-  function isAllowedElement(e?: Element) {
-    if (!e?.type) return false;
-    const t = e.type.toLowerCase();
-    return ALLOWED_TYPES.some((a) => t.includes(a));
+  function isBlock(e?: Element & { stereotype?: string }) {
+    if (!e) return false;
+
+    const type = e.type?.toLowerCase() ?? "";
+    const stereo = e.stereotype?.toLowerCase() ?? "";
+
+    return (
+      type.includes("sysml:block") ||
+      stereo === "block" ||
+      (type === "uml:class" && stereo === "block")
+    );
   }
 
-  /* ========= Nodes ========= */
-  const allowedNames = useMemo(() => {
-    const set = new Set<string>();
-
+  const idToName = useMemo(() => {
+    const map = new Map<string, string>();
     elements.forEach((e) => {
-      if (isAllowedElement(e) && e.name) {
-        set.add(e.name);
-      }
+      if (e.id && e.name) map.set(e.id, e.name);
     });
-
-    return set;
+    return map;
   }, [elements]);
 
-  /* ========= Links ========= */
-  const links = useMemo(() => {
+  const elementById = useMemo(() => {
+    const map = new Map<string, Element>();
+    elements.forEach((e) => map.set(e.id, e));
+    return map;
+  }, [elements]);
+
+  const links = useMemo<GraphLink[]>(() => {
     return relations
-      .filter(
-        (r) =>
-          r.sourceName &&
-          r.targetName &&
-          allowedNames.has(r.sourceName) &&
-          allowedNames.has(r.targetName)
-      )
-      .map((r) => ({
-        source: r.sourceName!,
-        target: r.targetName!,
-        type: r.type,
-      }));
-  }, [relations, allowedNames]);
+      .map((r): GraphLink | null => {
+        if (!r.source || !r.target) return null;
+
+        const src = elementById.get(r.source);
+        const tgt = elementById.get(r.target);
+
+        // 🔁 Port → Parent Block auflösen
+        const srcBlock =
+          src?.stereotype === "block"
+            ? src
+            : src?.parentId
+            ? elementById.get(src.parentId)
+            : null;
+
+        const tgtBlock =
+          tgt?.stereotype === "block"
+            ? tgt
+            : tgt?.parentId
+            ? elementById.get(tgt.parentId)
+            : null;
+
+        if (!srcBlock || !tgtBlock) return null;
+        if (srcBlock.id === tgtBlock.id) return null;
+
+        return {
+          source: srcBlock.id,
+          target: tgtBlock.id,
+          type: r.type,
+        };
+      })
+      .filter((l): l is GraphLink => l !== null);
+  }, [relations, elementById]);
+
   const nodes = useMemo(() => {
-    const names = new Set<string>();
+    const ids = new Set<string>();
+
     links.forEach((l) => {
-      names.add(l.source);
-      names.add(l.target);
+      ids.add(l.source);
+      ids.add(l.target);
     });
-    return Array.from(names).map((n) => ({ id: n, name: n }));
-  }, [links]);
+
+    return Array.from(ids).map((id) => {
+      const el = elementById.get(id);
+      return {
+        id,
+        name: el?.name ?? id,
+      };
+    });
+  }, [links, elementById]);
 
   useEffect(() => {
     if (!graphRef.current) return;

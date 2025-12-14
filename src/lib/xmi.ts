@@ -220,6 +220,67 @@ export function parseXmiFromString(xmiText: string): ParsedModel {
   const classStats: ClassStat[] = [];
   const diagramList: DiagramInfo[] = [];
 
+  function collectAllRelations(node: any) {
+    if (!node || typeof node !== "object") return;
+
+    const type = node["xmi:type"] ?? node["type"];
+
+    const relationTypes = [
+      "uml:Dependency",
+      "uml:Abstraction",
+      "uml:Association",
+      "uml:Realization",
+      "uml:Generalization",
+      "uml:Connector",
+      "sysml:Satisfy",
+      "sysml:Verify",
+      "sysml:DeriveReqt",
+      "sysml:Trace",
+    ];
+
+    if (type && relationTypes.includes(type)) {
+      const id = node["xmi:id"] ?? node["id"];
+      const name = node["name"] ?? "";
+
+      // wie im alten Parser
+      const client =
+        node.client ??
+        node.source ??
+        node.base_Abstraction ??
+        node.base_Dependency ??
+        null;
+
+      const supplier = node.supplier ?? node.target ?? null;
+
+      // Spezialfall Connector
+      if (type === "uml:Connector") {
+        const ends = asArray(node.end);
+        relationships.push({
+          id,
+          name: name || "Connector",
+          type: "uml:Connector",
+          source: ends[0]?.role ?? null,
+          target: ends[1]?.role ?? null,
+        });
+      } else {
+        relationships.push({
+          id,
+          name,
+          type,
+          source: client,
+          target: supplier,
+        });
+      }
+    }
+
+    // 🔁 WICHTIG: rekursiv durch ALLES gehen
+    for (const key of Object.keys(node)) {
+      const val = node[key];
+      if (Array.isArray(val)) val.forEach(collectAllRelations);
+      else if (typeof val === "object") collectAllRelations(val);
+    }
+  }
+
   for (const pe of packaged) {
     const type = pe["xmi:type"] ?? pe["type"];
     const id = pe["xmi:id"] ?? pe["id"];
@@ -274,6 +335,7 @@ export function parseXmiFromString(xmiText: string): ParsedModel {
       ports: [],
       incoming: [],
       outgoing: [],
+      connectors: [],
     };
     idToName[id] = pe.name ?? "(Unbenannt)";
 
@@ -283,6 +345,7 @@ export function parseXmiFromString(xmiText: string): ParsedModel {
     }
 
     elements.push(element);
+
     if (type === "uml:Class") {
       // Ports
       for (const p of element.ports ?? []) {
@@ -290,6 +353,8 @@ export function parseXmiFromString(xmiText: string): ParsedModel {
           id: p.id,
           name: p.name,
           type: "uml:Port",
+          parentId: element.id,
+
           package: element.package,
           depth: (element.depth ?? 0) + 1,
           incoming: [],
@@ -354,6 +419,42 @@ export function parseXmiFromString(xmiText: string): ParsedModel {
       if (tgtEl) tgtEl.incoming!.push(id);
     }
 
+    if (type === "uml:Connector") {
+      const ends = asArray(pe.end);
+
+      if (ends.length >= 2) {
+        relationships.push({
+          id,
+          type: "uml:Connector",
+          source: ends[0]?.role,
+          target: ends[1]?.role,
+          name: pe.name ?? "Connector",
+        });
+
+        if (
+          type === "sysml:Satisfy" ||
+          type === "sysml:Verify" ||
+          type === "sysml:DeriveReqt"
+        ) {
+          relationships.push({
+            id,
+            type,
+            source: pe.client ?? pe.source ?? pe.base_Abstraction,
+            target: pe.supplier ?? pe.target,
+            name: pe.name,
+          });
+        }
+        const source = ends[0]?.role;
+        const target = ends[1]?.role;
+
+        const srcEl = elements.find((e) => e.id === source);
+        const tgtEl = elements.find((e) => e.id === target);
+
+        if (srcEl) srcEl.connectors!.push(id);
+        if (tgtEl) tgtEl.connectors!.push(id);
+      }
+    }
+
     // Generalizations
     for (const gen of asArray(pe.generalization)) {
       relationships.push({
@@ -387,6 +488,42 @@ export function parseXmiFromString(xmiText: string): ParsedModel {
       });
     }
   }
+  collectAllRelations(model);
+
+  function collectConnectors(node: any) {
+    if (!node || typeof node !== "object") return;
+
+    if (node["xmi:type"] === "uml:Connector") {
+      const connectorId = node["xmi:id"];
+      const ends = asArray(node.end);
+
+      if (ends.length >= 2) {
+        const sourcePortId = ends[0]?.role;
+        const targetPortId = ends[1]?.role;
+
+        // Port → Parent Class auflösen
+        const srcPort = elements.find((e) => e.id === sourcePortId);
+        const tgtPort = elements.find((e) => e.id === targetPortId);
+
+        if (srcPort?.parentId) {
+          const srcClass = elements.find((e) => e.id === srcPort.parentId);
+          srcClass?.connectors?.push(connectorId);
+        }
+
+        if (tgtPort?.parentId) {
+          const tgtClass = elements.find((e) => e.id === tgtPort.parentId);
+          tgtClass?.connectors?.push(connectorId);
+        }
+      }
+    }
+
+    for (const k of Object.keys(node)) {
+      const v = node[k];
+      if (Array.isArray(v)) v.forEach(collectConnectors);
+      else if (typeof v === "object") collectConnectors(v);
+    }
+  }
+  collectConnectors(model);
 
   const diagramNodes: any[] = [];
   function resolveDiagramPackage(
@@ -463,7 +600,7 @@ export function parseXmiFromString(xmiText: string): ParsedModel {
 
   for (const d of mappedDiagrams) {
     const diagramId = `diagram_${d.name}_${d.mdType}`;
-    if (!d.name || d.name === "Unbenanntes Diagramm") continue; // 🔥 HIER
+    if (!d.name || d.name === "Unbenanntes Diagramm") continue;
 
     if (!elements.some((e) => e.id === diagramId)) {
       elements.push({

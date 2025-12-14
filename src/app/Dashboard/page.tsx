@@ -107,8 +107,7 @@ export default function DashboardPage() {
       ].filter((r) => r.value > 0)
     : [];
 
-  const totalRelations = relationsData.reduce((sum, r) => sum + r.value, 0);
-
+  const totalRelations = relations.length;
   useEffect(() => {
     async function loadSmells() {
       try {

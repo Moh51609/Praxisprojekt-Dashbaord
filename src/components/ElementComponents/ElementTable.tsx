@@ -26,6 +26,7 @@ const ALLOWED_TYPES = [
   "Port",
   "Property",
   "Package",
+
   "Diagram",
   "Requirement",
   "Activity",
