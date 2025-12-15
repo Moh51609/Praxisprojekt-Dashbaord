@@ -21,45 +21,47 @@ import {
 import { Layers } from "lucide-react";
 import { translations } from "@/lib/i18n";
 import { useLanguage } from "@/hooks/useLanguage";
+import { useModel } from "@/context/ModelContext";
 
 export default function ElementTypeDistributionChart() {
   const accent = useAccentColor();
   const { theme } = useTheme();
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+
   const { language } = useLanguage();
 
-  // 📦 API-Daten
-  const [packages, setPackages] = useState<string[]>([]);
-  const [typeCountsByPackage, setTypeCountsByPackage] = useState<
-    Record<string, Record<string, number>>
-  >({});
-  const [selectedPackage, setSelectedPackage] = useState<string>("");
+  const { model } = useModel();
 
-  // 🔹 Daten beim ersten Render laden
-  useEffect(() => {
-    async function loadData() {
-      try {
-        const res = await fetch("/api/xmi-elements");
-        const json = await res.json();
-
-        if (!res.ok)
-          throw new Error(json.error || "Fehler beim Laden der Daten");
-
-        setTypeCountsByPackage(json.typeCountsByPackage);
-        const pkgNames = Object.keys(json.typeCountsByPackage);
-        setPackages(pkgNames);
-        setSelectedPackage(pkgNames[0] || "Root");
-        setLoading(false);
-      } catch (e: any) {
-        console.error("❌ Fehler beim Laden der Elementdaten:", e);
-        setError(e.message);
-        setLoading(false);
-      }
+  const { packages, typeCountsByPackage } = useMemo(() => {
+    if (!model) {
+      return { packages: [], typeCountsByPackage: {} };
     }
 
-    loadData();
-  }, []);
+    const map: Record<string, Record<string, number>> = {};
+
+    model.elements.forEach((el) => {
+      const pkg = el.package ?? "(Unbekannt)";
+      const type = el.type?.replace(/^uml:|^sysml:/, "") ?? "Unknown";
+
+      if (!map[pkg]) map[pkg] = {};
+      map[pkg][type] = (map[pkg][type] ?? 0) + 1;
+    });
+
+    const filteredMap = Object.fromEntries(
+      Object.entries(map).filter(([pkg]) => pkg !== "(Diagrams)")
+    );
+
+    return {
+      packages: Object.keys(filteredMap).sort(),
+      typeCountsByPackage: filteredMap,
+    };
+  }, [model]);
+  const [selectedPackage, setSelectedPackage] = useState<string>("");
+
+  useEffect(() => {
+    if (!selectedPackage && packages.length > 0) {
+      setSelectedPackage(packages[0]);
+    }
+  }, [packages, selectedPackage]);
 
   // 🔹 Typverteilung für das gewählte Package berechnen
   const typeCounts = useMemo(() => {
@@ -88,23 +90,6 @@ export default function ElementTypeDistributionChart() {
   const axisColor = theme === "dark" ? "#D1D5DB" : "#111827";
 
   // 🔄 Ladezustände behandeln
-  if (loading) {
-    return (
-      <section className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-6">
-        <p className="text-center text-gray-500 dark:text-gray-300">
-          Lädt Daten aus dem Modell …
-        </p>
-      </section>
-    );
-  }
-
-  if (error) {
-    return (
-      <section className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-6">
-        <p className="text-center text-red-500">Fehler: {error}</p>
-      </section>
-    );
-  }
 
   function truncatePath(path: string, maxLength = 28) {
     if (path.length <= maxLength) return path;

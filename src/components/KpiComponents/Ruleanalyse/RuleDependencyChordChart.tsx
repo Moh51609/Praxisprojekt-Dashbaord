@@ -1,7 +1,7 @@
 "use client";
 
 import * as d3 from "d3";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAccentColor } from "@/hooks/useAccentColor";
 import { useTheme } from "next-themes";
 import { useLanguage } from "@/hooks/useLanguage";
@@ -13,6 +13,7 @@ export default function RuleDependencyChordChart({ rules }: { rules: any[] }) {
   const accentColor = useAccentColor();
   const { theme } = useTheme();
   const { language } = useLanguage();
+  const [hasDependencies, setHasDependencies] = useState(true);
 
   useEffect(() => {
     if (!ref.current || !rules?.length) return;
@@ -29,7 +30,6 @@ export default function RuleDependencyChordChart({ rules }: { rules: any[] }) {
       .attr("viewBox", [-width / 2, -height / 2, width, height])
       .append("g");
 
-    // 🔹 Beispielhafte Verknüpfungen simulieren (später aus echten Daten generierbar)
     const matrix = rules.map((r1, i) =>
       rules.map((r2, j) =>
         i === j
@@ -39,12 +39,18 @@ export default function RuleDependencyChordChart({ rules }: { rules: any[] }) {
             )
       )
     );
-    console.log("Matrix:", matrix);
+    const hasConnections = matrix.some((row) => row.some((v) => v > 0));
+
+    setHasDependencies(hasConnections);
+
+    if (!hasConnections) {
+      return;
+    }
 
     const chord = d3.chord().padAngle(0.05).sortSubgroups(d3.descending)(
       matrix
     );
-    const ribbon = d3.ribbon().radius(innerRadius); // <-- WICHTIG!
+    const ribbon = d3.ribbon().radius(innerRadius);
 
     const colorScale = d3
       .scaleOrdinal(d3.schemeCategory10)
@@ -130,8 +136,14 @@ export default function RuleDependencyChordChart({ rules }: { rules: any[] }) {
         </h2>
       </div>
 
-      <div className="flex justify-center">
-        <svg ref={ref} width="480" height="480" />
+      <div className="flex justify-center items-center h-[480px]">
+        {hasDependencies ? (
+          <svg ref={ref} width="480" height="480" />
+        ) : (
+          <div className="text-sm text-gray-500 dark:text-gray-300 text-center">
+            Keine zusammenhängenden Regeln vorhanden
+          </div>
+        )}
       </div>
 
       <p className="text-xs text-gray-500 dark:text-gray-300 mt-3 text-center">

@@ -228,54 +228,6 @@ export function evaluateModelSmellsPure(
     }
   });
 
-  // === S8 – Empty Diagram ====================================
-  // === S8 – Empty Diagram ====================================
-  // erkennt nur echte Diagramme mit Namen, die keine modellierten Elemente enthalten
-
-  const diagramList = (data.diagramList ?? []).filter((d) => {
-    const name = d.name?.toLowerCase() ?? "";
-    const type = d.mdType?.toLowerCase() ?? "";
-
-    // ❌ ausschließen: unbenannte oder technische Diagramme
-    if (!d.name || name.includes("unbenannt")) return false;
-    if (
-      type.includes("profile") ||
-      type.includes("layout") ||
-      type.includes("view")
-    )
-      return false;
-
-    // ✅ nur echte Diagrammtypen
-    return (
-      type.includes("usecase") ||
-      type.includes("block") ||
-      type.includes("internalblock") ||
-      type.includes("parametric") ||
-      type.includes("requirement")
-    );
-  });
-
-  diagramList.forEach((d) => {
-    const hasLinkedElement = elements.some(
-      (e) =>
-        e.name &&
-        e.name !== d.name &&
-        (e.package?.includes(d.name ?? "") || d.name?.includes(e.name))
-    );
-
-    if (!hasLinkedElement) {
-      smells.push({
-        id: "S8",
-        category: "Structure",
-        name: "Empty Diagram",
-        description: `Diagramm "${d.name}" enthält keine modellierten Elemente.`,
-        severity: "Medium",
-        element: d.name ?? "(Connector)",
-        packagePath: "Root",
-      });
-    }
-  });
-
   // === S9 – Overloaded Diagram ===============================
   const diagramTypeCounts = data.diagramsByType ?? {};
   Object.entries(diagramTypeCounts).forEach(([type, count]) => {
@@ -382,19 +334,6 @@ export function evaluateModelSmellsPure(
   });
 
   // === S15 – Element Without Stereotype ======================
-  elements.forEach((e) => {
-    if (!e.stereotype || e.stereotype.trim() === "") {
-      smells.push({
-        id: "S15",
-        category: "Consistency",
-        name: "Element Without Stereotype",
-        description: `Element "${e.name}" hat kein zugewiesenes Stereotyp.`,
-        severity: "Low",
-        element: e.name,
-        packagePath: e.package ?? "Root",
-      });
-    }
-  });
 
   return smells;
 }

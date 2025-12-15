@@ -54,7 +54,9 @@ export default function PackageDistributionChart({
   // 🔹 Daten für Recharts vorbereiten
   const chartData = Object.entries(packageCounts)
     .map(([pkg, count]) => ({ package: pkg, count }))
-    .sort((a, b) => b.count - a.count); // absteigend nach Größe
+    .sort((a, b) => b.count - a.count);
+
+  const hasPagination = chartData.length > PAGE_SIZE;
 
   useEffect(() => {
     if (!svgRef.current || !chartZoom) return;
@@ -74,6 +76,7 @@ export default function PackageDistributionChart({
       svg.on(".zoom", null); // Cleanup bei Unmount
     };
   }, [chartZoom]);
+  const pagedData = hasPagination ? chartData.slice(start, end) : chartData;
 
   const total = chartData.length;
   const totalPagesValue = totalPages ?? Math.ceil(total / PAGE_SIZE);
@@ -129,7 +132,7 @@ export default function PackageDistributionChart({
                 {/* 🔹 Diagramm */}
                 <ResponsiveContainer width="100%" height={400}>
                   <BarChart
-                    data={chartData.slice(start, end)}
+                    data={pagedData}
                     margin={{ top: 10, right: 20, left: -40, bottom: 0 }}
                   >
                     <XAxis
@@ -213,35 +216,39 @@ export default function PackageDistributionChart({
         <p className="text-xs text-gray-500 mt-2 dark:text-gray-300">
           {translations[language].packageDistributionLegend}
         </p>
-        <div className="flex justify-end items-center gap-2">
-          <button
-            className={`p-2 rounded-lg border ${
-              page === 0 ? "opacity-30 cursor-not-allowed" : "hover:bg-gray-100"
-            }`}
-            onClick={() => onPageChange(Math.max(0, page - 1))}
-            disabled={page === 0}
-          >
-            <ChevronLeft className="w-3 h-3 text-gray-600  hover:text-black dark:text-white dark:hover:text-black" />
-          </button>
+        {hasPagination && (
+          <div className="flex justify-end items-center gap-2">
+            <button
+              className={`p-2 rounded-lg border ${
+                page === 0
+                  ? "opacity-30 cursor-not-allowed"
+                  : "hover:bg-gray-100"
+              }`}
+              onClick={() => onPageChange(Math.max(0, page - 1))}
+              disabled={page === 0}
+            >
+              <ChevronLeft className="w-3 h-3 text-gray-600 dark:text-white" />
+            </button>
 
-          <span className="text-xs text-gray-600 dark:text-white ">
-            {translations[language].page} {page + 1} / {totalPagesValue}
-          </span>
+            <span className="text-xs text-gray-600 dark:text-white">
+              {translations[language].page} {page + 1} / {totalPagesValue}
+            </span>
 
-          <button
-            className={`p-2 rounded-lg border ${
-              page >= totalPagesValue - 1
-                ? "opacity-30 cursor-not-allowed"
-                : "hover:bg-gray-100"
-            }`}
-            onClick={() =>
-              onPageChange(Math.min(totalPagesValue - 1, page + 1))
-            }
-            disabled={page >= totalPagesValue - 1}
-          >
-            <ChevronRight className="w-3 h-3 text-gray-600  hover:text-black dark:text-white hover:dark:text-black" />
-          </button>
-        </div>
+            <button
+              className={`p-2 rounded-lg border ${
+                page >= totalPagesValue - 1
+                  ? "opacity-30 cursor-not-allowed"
+                  : "hover:bg-gray-100"
+              }`}
+              onClick={() =>
+                onPageChange(Math.min(totalPagesValue - 1, page + 1))
+              }
+              disabled={page >= totalPagesValue - 1}
+            >
+              <ChevronRight className="w-3 h-3 text-gray-600 dark:text-white" />
+            </button>
+          </div>
+        )}
       </div>
     </section>
   );

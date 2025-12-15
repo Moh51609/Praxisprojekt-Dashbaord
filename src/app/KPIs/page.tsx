@@ -97,18 +97,17 @@ import SmellViolationTable from "@/components/KpiComponents/ModelSmells/SmellVio
 import SmellSeverityTrendChart from "@/components/KpiComponents/ModelSmells/SmellSeverityTrendChart";
 import SmellDistributionHeatmap from "@/components/KpiComponents/ModelSmells/SmellDistributionHeatmap";
 import KpiExportDropdown from "@/components/KpiComponents/KpiExportDropdown";
+import { useModel } from "@/context/ModelContext";
 
 export default function KPIs() {
-  const [data, setData] = useState<ParsedModel | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(0);
   const [pagePackage, setPagePackage] = useState(0);
-
+  const { model: data, setModel } = useModel();
   const PAGE_SIZE = 20; // 🧩 20 Elemente pro Seite
   const accessColor = useAccentColor();
   const [portPage, setPortPage] = useState(0);
   const pageBackground = usePageBackground();
-  const [relations, setRelations] = useState<any[]>([]);
   const [section, setSection] = useState("structure");
   const { rules, error: rulesError } = useModelRules(data);
   const { language } = useLanguage();
@@ -116,55 +115,28 @@ export default function KPIs() {
     () => (data ? analyzeRuleHotspots(data) : []),
     [data]
   );
-  const [smells, setSmells] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const filteredHotspots = useMemo(
+    () =>
+      hotspots.filter(
+        (h) =>
+          h.package && h.package !== "Unbekannt" && h.package !== "(Diagrams)"
+      ),
+    [hotspots]
+  );
 
-  useEffect(() => {
-    async function loadSmells() {
-      try {
-        const res = await fetch("/api/model-smells");
-        const json = await res.json();
-        setSmells(json.smells || []);
-      } catch (err) {
-        console.error("Fehler beim Laden der Smells:", err);
-      } finally {
-        setLoading(false);
-      }
-    }
-    loadSmells();
-  }, []);
+  const smells = useMemo(() => {
+    if (!data) return [];
+    return evaluateModelSmellsPure(data, data.relationships ?? []);
+  }, [data]);
+  const filteredSmells = useMemo(
+    () =>
+      smells.filter(
+        (s) => s.packagePath && s.packagePath !== "-" && s.packagePath !== "—"
+      ),
+    [smells]
+  );
 
-  useEffect(() => {
-    fetch("/api/xmi")
-      .then((r) => r.json())
-      .then((j: ParsedModel | { error: string }) => {
-        if ("error" in j) setError(j.error);
-        else setData(j);
-      })
-      .catch((e) => setError(String(e)));
-  }, []);
-
-  useEffect(() => {
-    fetch("/api/xmi-relations")
-      .then((r) => r.json())
-      .then((j) => {
-        if ("error" in j) setError(j.error);
-        else {
-          setRelations(j.relations);
-
-          // 🧩 Debug: zeige welche Typen wirklich vorkommen
-          const typeCount = j.relations.reduce(
-            (acc: Record<string, number>, r: any) => {
-              acc[r.type] = (acc[r.type] ?? 0) + 1;
-              return acc;
-            },
-            {}
-          );
-          console.log("🔍 Beziehungstypen in API:", typeCount);
-        }
-      })
-      .catch((e) => setError(String(e)));
-  }, []);
+  const relations = data?.relationships ?? [];
 
   if (!data) {
     return null;
@@ -187,7 +159,7 @@ export default function KPIs() {
     abstractions: () => data.metrics.abstraction,
   };
 
-  const SmellCount = smells.length;
+  const SmellCount = filteredSmells.length;
 
   const totalRules = rules?.length;
   const passingRules = rules?.filter((r) => r.passed).length ?? 0;
@@ -236,6 +208,24 @@ export default function KPIs() {
         avgDepth * 2 // moderate Bestrafung
     )
   );
+
+  const ruleHotspotsByElement = (() => {
+    const map: Record<string, number> = {};
+
+    rules.forEach((r) => {
+      // WICHTIG: Regel MUSS Elementbezug haben
+      if (!r.elementId || !r.elementName) return;
+
+      map[r.elementName] = (map[r.elementName] ?? 0) + 1;
+    });
+
+    return Object.entries(map)
+      .map(([name, violations]) => ({
+        package: name, // ⬅️ Chart erwartet "package"
+        violations,
+      }))
+      .sort((a, b) => b.violations - a.violations);
+  })();
 
   const totalPortPages = Math.ceil((data.classStats?.length ?? 0) / 10);
   return (
@@ -342,7 +332,6 @@ export default function KPIs() {
                     <br /> S5 - {translations[language].s5}
                     <br /> S6 - {translations[language].s6}
                     <br /> S7 - {translations[language].s7}
-                    <br /> S8 -{translations[language].s8}
                     <br /> S9 - {translations[language].s9}
                     <br /> S10 - {translations[language].s10}
                     <br /> S11 - {translations[language].s11}
@@ -390,7 +379,10 @@ export default function KPIs() {
                 onPageChange={setPortPage}
               />
 
-              <RelationsHeatmap relations={relations} />
+              <RelationsHeatmap
+                relations={relations}
+                elements={data.elements}
+              />
 
               <IsolatedElementsChart
                 elements={data.elements}
@@ -422,7 +414,7 @@ export default function KPIs() {
                 </div>
               </div>
               <div className="grid grid-cols-1 [@media(min-width:1650px)]:grid-cols-2 gap-4 h-full">
-                <RuleHotspotChart hotspots={hotspots} />
+                <RuleHotspotChart hotspots={filteredHotspots} />
                 <RuleViolationTable rules={rules} />
               </div>
             </div>
@@ -447,14 +439,14 @@ export default function KPIs() {
             <div className="flex flex-col gap-4">
               <div className="grid  grid-cols-1 [@media(min-width:1650px)]:grid-cols-[33%_66%] [@media(min-width:1250px)]:grid-cols-1 gap-4 py-4">
                 <div className="grid [@media(min-width:1650px)]:grid-cols-1 grid-cols-2 gap-4">
-                  <SmellCategoryDonutChart smells={smells} />
-                  <SmellSeverityBarChart smells={smells} />
+                  <SmellCategoryDonutChart smells={filteredSmells} />
+                  <SmellSeverityBarChart smells={filteredSmells} />
                 </div>
-                <SmellViolationTable smells={smells} />
+                <SmellViolationTable smells={filteredSmells} />
               </div>
               <div className="grid [@media(min-width:1650px)]:grid-cols-2 grid-cols-1 gap-4">
-                <SmellSeverityTrendChart data={smells} />
-                <SmellDistributionHeatmap smells={smells} />
+                <SmellSeverityTrendChart data={filteredSmells} />
+                <SmellDistributionHeatmap smells={filteredSmells} />
               </div>
             </div>
           )}

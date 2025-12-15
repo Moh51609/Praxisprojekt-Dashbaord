@@ -5,15 +5,18 @@ import { useAccentColor } from "@/hooks/useAccentColor";
 import { Flame } from "lucide-react";
 import { useChartZoom } from "@/hooks/useChartZoom";
 import * as d3 from "d3";
-import { useEffect, useState } from "react";
-import { useRef } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { useAutoLoadChart } from "@/hooks/useAutoLoadChart";
 import { useLanguage } from "@/hooks/useLanguage";
 import { translations } from "@/lib/i18n";
 
-export default function RelationsHeatmap({ relations }: { relations: any[] }) {
-  // 🔹 Beziehungen nach Blocknamen zählen
-  const blockCounts: Record<string, number> = {};
+export default function RelationsHeatmap({
+  relations,
+  elements,
+}: {
+  relations: any[];
+  elements: any[];
+}) {
   const chartZoom = useChartZoom();
   const accentColor = useAccentColor();
   const autoLoad = useAutoLoadChart();
@@ -21,25 +24,110 @@ export default function RelationsHeatmap({ relations }: { relations: any[] }) {
   const zoomRef = useRef<SVGSVGElement | null>(null);
   const { language } = useLanguage();
   const [transform, setTransform] = useState(d3.zoomIdentity);
-  relations.forEach((r) => {
-    const source = r.sourceName || r.source || "Unbekannt";
-    const target = r.targetName || r.target || "Unbekannt";
-    blockCounts[source] = (blockCounts[source] ?? 0) + 1;
-    blockCounts[target] = (blockCounts[target] ?? 0) + 1;
-  });
 
-  // 🔹 Daten für die Treemap vorbereiten
-  const data = Object.entries(blockCounts).map(([name, count]) => ({
-    name,
-    size: count,
-  }));
+  // -------------------------
+  // 🔍 Lookup
+  // -------------------------
+  const elementById = useMemo(() => {
+    const map = new Map<string, any>();
+    elements.forEach((e) => map.set(e.id, e));
+    return map;
+  }, [elements]);
 
+  // -------------------------
+  // 🔍 Block-Erkennung (IDENTISCH zu RelationsGraph)
+  // -------------------------
+  function isBlock(e?: any) {
+    if (!e) return false;
+
+    const type = e.type?.toLowerCase() ?? "";
+    const stereo = (e.stereotype ?? "").toLowerCase();
+
+    // SysML / UML Block-artige Klassen
+    if (type === "uml:class") return true;
+
+    if (type.includes("sysml:block")) return true;
+
+    // System / Kontext / Domain zählen fachlich als Block
+    if (
+      stereo.includes("system") ||
+      stereo.includes("kontext") ||
+      stereo.includes("domain")
+    ) {
+      return true;
+    }
+
+    return false;
+  }
+
+  // -------------------------
+  // 🔁 Element → Block auflösen
+  // -------------------------
+  function resolveToBlock(el?: any): any | null {
+    if (!el) return null;
+    if (isBlock(el)) return el;
+    if (el.parentId) return resolveToBlock(elementById.get(el.parentId));
+    return null;
+  }
+
+  // -------------------------
+  // 🔥 Beziehungen pro Block zählen (KERNFIX)
+  // -------------------------
+  const blockCounts = useMemo<Record<string, number>>(() => {
+    const counts: Record<string, number> = {};
+
+    relations.forEach((r, i) => {
+      if (!r.source || !r.target) return;
+
+      const srcEl = elementById.get(r.source);
+      const tgtEl = elementById.get(r.target);
+
+      const srcBlock = resolveToBlock(srcEl);
+      const tgtBlock = resolveToBlock(tgtEl);
+      console.log(`🔍 Relation ${i}`);
+      console.log("  raw:", r.type);
+      console.log("  srcEl:", srcEl?.name, srcEl?.type, srcEl?.stereotype);
+      console.log("  tgtEl:", tgtEl?.name, tgtEl?.type, tgtEl?.stereotype);
+      console.log("  srcBlock:", srcBlock?.name);
+      console.log("  tgtBlock:", tgtBlock?.name);
+
+      if (!srcBlock || !tgtBlock) return;
+      if (srcBlock.id === tgtBlock.id) return;
+
+      const srcName = srcBlock.name ?? srcBlock.id;
+      const tgtName = tgtBlock.name ?? tgtBlock.id;
+
+      counts[srcName] = (counts[srcName] ?? 0) + 1;
+      counts[tgtName] = (counts[tgtName] ?? 0) + 1;
+    });
+
+    return counts;
+  }, [relations, elementById]);
+
+  // -------------------------
+  // 🔹 Treemap-Daten
+  // -------------------------
+  const data = useMemo(
+    () =>
+      Object.entries(blockCounts).map(([name, count]) => ({
+        name,
+        size: count,
+      })),
+    [blockCounts]
+  );
+
+  // -------------------------
+  // 🎨 Farbskala
+  // -------------------------
   const getColor = (value: number) => {
     if (value > 15) return "#f59e0b"; // orange
     if (value > 8) return "#facc15"; // gelb
     return "#10b981"; // grün
   };
 
+  // -------------------------
+  // 🔍 Zoom
+  // -------------------------
   useEffect(() => {
     if (!zoomRef.current) return;
 
@@ -48,12 +136,11 @@ export default function RelationsHeatmap({ relations }: { relations: any[] }) {
     if (chartZoom) {
       const zoomBehavior = d3
         .zoom<SVGSVGElement, unknown>()
-        .scaleExtent([0.5, 3]) // Zoom-Bereich
+        .scaleExtent([0.5, 3])
         .on("zoom", (event) => setTransform(event.transform));
 
       svg.call(zoomBehavior as any);
     } else {
-      // 🔸 Zoom deaktiviert → zurücksetzen
       svg.on(".zoom", null);
       setTransform(d3.zoomIdentity);
     }
@@ -65,7 +152,7 @@ export default function RelationsHeatmap({ relations }: { relations: any[] }) {
 
   if (!visible) {
     return (
-      <div className="flex flex-col min-h-[400px] flex-1 items-center justify-center  dark:bg-gray-800 bg-white rounded-2xl shadow-sm">
+      <div className="flex flex-col min-h-[400px] flex-1 items-center justify-center dark:bg-gray-800 bg-white rounded-2xl shadow-sm">
         <p className="text-gray-600 dark:text-gray-200 mb-4 text-center">
           {translations[language].loadChart}
         </p>
@@ -88,6 +175,7 @@ export default function RelationsHeatmap({ relations }: { relations: any[] }) {
           {translations[language].relationsIntensity}
         </h2>
       </div>
+
       <div className="rounded-2xl overflow-hidden relative">
         <svg ref={zoomRef} width="100%" height="500">
           <g transform={transform.toString()}>
@@ -109,7 +197,7 @@ export default function RelationsHeatmap({ relations }: { relations: any[] }) {
                         if (!payload?.length) return null;
                         const d = payload[0].payload;
                         return (
-                          <div className="  bg-white border border-gray-200 text-black p-2 rounded shadow text-xs">
+                          <div className="bg-white border border-gray-200 text-black p-2 rounded shadow text-xs">
                             <strong>{d.name}</strong>
                             <div>{d.size} Beziehungen</div>
                           </div>
@@ -124,7 +212,7 @@ export default function RelationsHeatmap({ relations }: { relations: any[] }) {
         </svg>
       </div>
 
-      <p className="text-xs text-gray-500 dark:text-gray-400 mt-3 flex items-center justify-center">
+      <p className="text-xs text-gray-500 mt-2 dark:text-gray-300">
         {translations[language].relationsIntensityLegend}
       </p>
     </div>

@@ -61,6 +61,8 @@ export default function ChartDepth({
       depth: e.depth ?? 0,
     }));
 
+  const hasPagination = allDepthData.length > PAGE_SIZE;
+
   useEffect(() => {
     if (!svgRef.current || !chartZoom) return;
 
@@ -102,11 +104,14 @@ export default function ChartDepth({
     );
   }
 
- 
-
   const start = page * PAGE_SIZE;
   const end = start + PAGE_SIZE;
-  const depthData = [{ name: "", depth: 0 }, ...allDepthData.slice(start, end)];
+  const depthData = [
+    { name: "", depth: 0 },
+    ...(hasPagination
+      ? allDepthData.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
+      : allDepthData),
+  ];
   return (
     <section className="rounded-2xl dark:bg-gray-800 bg-white p-6 shadow-sm relative">
       <div className="flex justify-between mb-4 items-center">
@@ -292,33 +297,37 @@ export default function ChartDepth({
           {translations[language].depthLegend}
           (&gt;6)
         </p>
-        <div className="flex justify-end items-center gap-2">
-          <button
-            className={`p-2 rounded-lg border ${
-              page === 0 ? "opacity-30 cursor-not-allowed" : "hover:bg-gray-100"
-            }`}
-            onClick={() => onPageChange(Math.max(0, page - 1))} // ⬅️ Zurückblättern
-            disabled={page === 0}
-          >
-            <ChevronLeft className="w-3 h-3 text-gray-600  hover:text-black dark:text-white dark:hover:text-black" />
-          </button>
+        {hasPagination && (
+          <div className="flex justify-end items-center gap-2">
+            <button
+              className={`p-2 rounded-lg border ${
+                page === 0
+                  ? "opacity-30 cursor-not-allowed"
+                  : "hover:bg-gray-100"
+              }`}
+              onClick={() => onPageChange(Math.max(0, page - 1))}
+              disabled={page === 0}
+            >
+              <ChevronLeft className="w-3 h-3 text-gray-600 dark:text-white" />
+            </button>
 
-          <span className="text-xs text-gray-600 dark:text-white ">
-            {translations[language].page} {page + 1} / {totalPages}
-          </span>
+            <span className="text-xs text-gray-600 dark:text-white">
+              {translations[language].page} {page + 1} / {totalPages}
+            </span>
 
-          <button
-            className={`p-2 rounded-lg border ${
-              page >= totalPages - 1
-                ? "opacity-30 cursor-not-allowed"
-                : "hover:bg-gray-100"
-            }`}
-            onClick={() => onPageChange(Math.min(totalPages - 1, page + 1))} // ➡️ Vorblättern
-            disabled={page >= totalPages - 1}
-          >
-            <ChevronRight className="w-3 h-3 text-gray-600  hover:text-black dark:text-white hover:dark:text-black" />
-          </button>
-        </div>
+            <button
+              className={`p-2 rounded-lg border ${
+                page >= totalPages - 1
+                  ? "opacity-30 cursor-not-allowed"
+                  : "hover:bg-gray-100"
+              }`}
+              onClick={() => onPageChange(Math.min(totalPages - 1, page + 1))}
+              disabled={page >= totalPages - 1}
+            >
+              <ChevronRight className="w-3 h-3 text-gray-600 dark:text-white" />
+            </button>
+          </div>
+        )}
       </div>
     </section>
   );

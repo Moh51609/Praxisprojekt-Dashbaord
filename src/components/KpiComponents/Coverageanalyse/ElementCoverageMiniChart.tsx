@@ -1,7 +1,7 @@
 "use client";
 import { useAccentColor } from "@/hooks/useAccentColor";
 import { useTheme } from "next-themes";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   BarChart,
   Bar,
@@ -19,13 +19,12 @@ import { useChartBackground } from "@/hooks/useChartBackground";
 import { useChartTooltipStyle } from "@/hooks/useChartTooltipStyle";
 import { translations } from "@/lib/i18n";
 import { useLanguage } from "@/hooks/useLanguage";
+import { useModel } from "@/context/ModelContext";
 
 export default function ElementCoverageMiniChart() {
   const accent = useAccentColor();
   const { theme } = useTheme();
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [data, setData] = useState<any[]>([]);
+  const { model } = useModel();
   const chartBackground = useChartBackground();
   const svgRef = useRef<SVGSVGElement | null>(null);
   const [transform, setTransform] = useState(d3.zoomIdentity);
@@ -33,59 +32,54 @@ export default function ElementCoverageMiniChart() {
   const tooltipStyle = useChartTooltipStyle();
   const { language } = useLanguage();
 
-  // 🔹 Daten beim ersten Render laden (wie im Donut)
-  useEffect(() => {
-    async function loadData() {
-      try {
-        const res = await fetch("/api/xmi-elements");
-        const json = await res.json();
+  const data = useMemo(() => {
+    if (!model) return [];
 
-        if (!res.ok)
-          throw new Error(json.error || "Fehler beim Laden der Daten");
+    const elements = model.elements;
 
-        const elements = json.elements ?? [];
+    const classes = elements.filter(
+      (e) =>
+        e.type?.toLowerCase() === "uml:class" &&
+        e.package !== "(Diagrams)" &&
+        e.package !== "(Unbekannt)"
+    );
 
-        // 🔹 Fokus auf Haupttypen (Block, Requirement, Port, Connector)
-        const categories = ["Class", "Requirements", "Port", "Connector"];
+    const connectorCount = classes.reduce(
+      (sum, c) => sum + (c.connectors?.length ?? 0),
+      0
+    );
 
-        const counts = categories.map((cat) => {
-          const all = elements.filter((e: any) =>
-            e.type?.toLowerCase().includes(cat.toLowerCase())
-          );
-          return { type: cat, count: all.length };
-        });
-
-        setData(counts);
-        setLoading(false);
-      } catch (e: any) {
-        console.error("❌ Fehler beim Laden der Elementdaten:", e);
-        setError(e.message);
-        setLoading(false);
-      }
-    }
-    loadData();
-  }, []);
+    return [
+      {
+        type: "Class",
+        count: classes.length,
+      },
+      {
+        type: "Requirements",
+        count: elements.filter(
+          (e) =>
+            e.type?.toLowerCase().includes("requirement") &&
+            e.package !== "(Diagrams)" &&
+            e.package !== "(Unbekannt)"
+        ).length,
+      },
+      {
+        type: "Port",
+        count: elements.filter(
+          (e) =>
+            e.type?.toLowerCase() === "uml:port" &&
+            e.package !== "(Diagrams)" &&
+            e.package !== "(Unbekannt)"
+        ).length,
+      },
+      {
+        type: "Association",
+        count: model.metrics.associations ?? 0,
+      },
+    ];
+  }, [model]);
 
   const axisColor = theme === "dark" ? "#D1D5DB" : "#111827";
-
-  // 🔄 Ladezustände behandeln
-  if (loading) {
-    return (
-      <section className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-4">
-        <p className="text-center text-gray-500 dark:text-gray-300">
-          Lädt Daten aus dem Modell …
-        </p>
-      </section>
-    );
-  }
-
-  if (error) {
-    return (
-      <section className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-4">
-        <p className="text-center text-red-500">Fehler: {error}</p>
-      </section>
-    );
-  }
 
   return (
     <section className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-4">

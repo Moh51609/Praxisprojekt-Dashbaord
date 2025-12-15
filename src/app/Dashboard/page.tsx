@@ -122,27 +122,6 @@ export default function DashboardPage() {
     }
     loadSmells();
   }, []);
-  const relationTypeCounts = relations.reduce((acc, r) => {
-    const cleanType = r.type?.replace(/^uml:|^sysml:/, "").trim();
-
-    if (!cleanType) return acc;
-
-    acc[cleanType] = (acc[cleanType] ?? 0) + 1;
-    return acc;
-  }, {} as Record<string, number>);
-
-  const nonZeroRelationTypes = Object.entries(relationTypeCounts).filter(
-    ([, count]) => count > 0
-  );
-
-  const relationshipTypeCount = nonZeroRelationTypes.length;
-
-  const totalStructuralElements = data
-    ? data.metrics.classes +
-      data.metrics.ports +
-      data.metrics.properties +
-      data.metrics.connectors
-    : 0;
 
   if (!mounted) return null;
   return (
@@ -181,37 +160,37 @@ export default function DashboardPage() {
           <div className="grid grid-cols-1  [@media(min-width:1600px)]:grid-cols-[2fr_1fr]  gap-4 items-stretch py-4 justify-center  ">
             <section className="grid lg:grid-cols-3 md:grid-cols-2 sm:grid-cols-1 gap-4 w-full ">
               <KpiCard
-                total={totalStructuralElements}
+                total={elements.length}
                 title={translations[language].blocks}
                 value={data.metrics.classes}
                 icon={Cuboid}
               />
               <KpiCard
-                total={totalStructuralElements}
+                total={elements.length}
                 title={translations[language].association}
                 value={data.metrics.associations ?? "0"}
                 icon={Cable}
               />
               <KpiCard
-                total={totalStructuralElements}
+                total={elements.length}
                 title={translations[language].generalization}
                 value={data.metrics.generalizations ?? "0"}
                 icon={Dna}
               />
               <KpiCard
-                total={totalStructuralElements}
+                total={elements.length}
                 title={translations[language].ports}
                 value={data.metrics.ports ?? "0"}
                 icon={BetweenHorizonalEnd}
               />
               <KpiCard
-                total={totalStructuralElements}
+                total={elements.length}
                 title={translations[language].useCases}
                 value={data.metrics.useCases ?? "0"}
                 icon={ChartNetwork}
               />
               <KpiCard
-                total={totalStructuralElements}
+                total={elements.length}
                 title={translations[language].diagrams}
                 value={data.metrics.diagramsTotal ?? "0"}
                 icon={ChartPie}

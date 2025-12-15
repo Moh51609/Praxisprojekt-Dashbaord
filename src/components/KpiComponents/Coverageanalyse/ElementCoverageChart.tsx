@@ -59,41 +59,67 @@ export default function SystemCoverageRadarChart({
      ✅ KORREKTE COVERAGE – angepasst an XML + ParsedModel
      ================================================= */
   const coverage = useMemo(() => {
-    const elements = data?.elements ?? [];
+    if (!data) return [];
+
+    const elements = data.elements ?? [];
     const rels = relations ?? [];
 
-    /* 🔹 BLOCKS (uml:Class mit Ports oder Block-Stereotyp) */
-    const blocks = data.elements.filter(
-      (e: UmlElement) => e.type === "uml:Class"
-    );
-    const connectedBlocks = blocks.filter((b: UmlElement) =>
-      relations.some((r) => r.source === b.id || r.target === b.id)
+    // 🔹 IDs, die irgendwo in Relations vorkommen
+    const relatedIds = new Set<string>();
+    rels.forEach((r) => {
+      if (r.source) relatedIds.add(r.source);
+      if (r.target) relatedIds.add(r.target);
+    });
+
+    // -----------------------------
+    // 🧩 BLOCKS
+    // -----------------------------
+    const blocks = elements.filter(
+      (e) =>
+        e.type === "uml:Class" &&
+        e.package !== "(Diagrams)" &&
+        e.package !== "(Unbekannt)"
     );
 
-    console.log("Blocks gesamt:", blocks.length);
-    console.log("Verbundene Blocks:", connectedBlocks.length);
-    /* 🔹 REQUIREMENTS */
-    const requirements = elements.filter((e: any) =>
+    const connectedBlocks = blocks.filter(
+      (b) =>
+        elements.some(
+          (child) => child.parentId === b.id && relatedIds.has(child.id)
+        ) || relatedIds.has(b.id)
+    );
+
+    // -----------------------------
+    // 📦 REQUIREMENTS
+    // -----------------------------
+    const requirements = elements.filter((e) =>
       e.type?.toLowerCase().includes("requirement")
     );
-    const connectedRequirements = requirements.filter((r: any) =>
+
+    const connectedRequirements = requirements.filter((r) =>
       relatedIds.has(r.id)
     );
 
-    /* 🔹 PORTS (über owning Block!) */
-    const ports = blocks.flatMap((b: any) => b.ports ?? []);
-    const connectedPorts = blocks
-      .filter((b: any) => relatedIds.has(b.id))
-      .flatMap((b: any) => b.ports ?? []);
+    // -----------------------------
+    // 🔌 PORTS
+    // -----------------------------
+    const ports = elements.filter((e) => e.type === "uml:Port");
 
-    /* 🔹 CONNECTORS */
-    const connectors = rels;
-    const validConnectors = connectors.filter((r: any) => r.source && r.target);
+    const connectedPorts = ports.filter(
+      (p) => relatedIds.has(p.id) || (p.parentId && relatedIds.has(p.parentId))
+    );
 
-    /* 🔹 PACKAGES */
-    const packages = elements.filter((e: any) => e.type === "uml:Package");
-    const nonEmptyPackages = packages.filter((p: any) =>
-      elements.some((e: any) => e.package === p.name)
+    // -----------------------------
+    // 🔗 ASSOCIATIONS (nicht Connector!)
+    // -----------------------------
+    const associations = data.metrics.associations;
+
+    // -----------------------------
+    // 📁 PACKAGES
+    // -----------------------------
+    const packages = elements.filter((e) => e.type === "uml:Package");
+
+    const nonEmptyPackages = packages.filter((p) =>
+      elements.some((e) => e.package === p.name && e.type !== "uml:Package")
     );
 
     return [
@@ -118,11 +144,10 @@ export default function SystemCoverageRadarChart({
           : 0,
       },
       {
-        category: "Connector",
-        abdeckung: connectors.length
-          ? Math.round((validConnectors.length / connectors.length) * 100)
-          : 0,
+        category: "Association",
+        abdeckung: data.metrics.associations > 0 ? 100 : 0,
       },
+
       {
         category: "Package",
         abdeckung: packages.length
@@ -130,7 +155,7 @@ export default function SystemCoverageRadarChart({
           : 0,
       },
     ];
-  }, [data, relations, relatedIds]);
+  }, [data, relations]);
 
   return (
     <section className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-6">

@@ -108,13 +108,30 @@ export function evaluateModelRulesPure(data: ParsedModel, relations: any[]) {
   /* ======================================================
      R5 – Isolierte Elemente
      ====================================================== */
-  const relatedIds = new Set(relations.flatMap((r) => [r.source, r.target]));
-  const isolated = data.elements.filter((e) => !relatedIds.has(e.id));
+
+  const RELEVANT_TYPES = [
+    "uml:Class",
+    "sysml:Block",
+    "sysml:Requirement",
+    "uml:UseCase",
+  ];
+
+  const isolated = data.elements.filter((e) => {
+    // nur relevante Elemente prüfen
+    if (!RELEVANT_TYPES.some((t) => e.type.includes(t))) return false;
+
+    const hasRelations =
+      (e.incoming?.length ?? 0) > 0 ||
+      (e.outgoing?.length ?? 0) > 0 ||
+      (e.connectors?.length ?? 0) > 0;
+
+    return !hasRelations;
+  });
 
   rules.push({
     id: "R5",
     name: "Isolierte Elemente",
-    description: "Kein Block sollte unverbunden sein.",
+    description: "Relevante Modell-Elemente sollten eingebunden sein.",
     passed: isolated.length === 0,
     violations: isolated.length,
     violatingElements: isolated.map((e) => ({
@@ -123,7 +140,6 @@ export function evaluateModelRulesPure(data: ParsedModel, relations: any[]) {
       packagePath: getPackagePath(e),
     })),
   });
-
   /* ======================================================
      R6 – Ungültige Connector-Enden
      ====================================================== */

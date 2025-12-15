@@ -109,9 +109,8 @@ export const translations = {
     elementdistributionLegend:
       "Zeigt die Anzahl zentraler Elementtypen (Block, Requirement, Port, Connector).",
 
-    isolatedELements: "Isolierte ELemente",
-    isolatedELementsLegend:
-      "Rote Punkte repräsentieren isolierte Elemente . Verbundene Elemente bilden Cluster.",
+    isolatedELements: "Isolierte Blöcke",
+    isolatedELementsLegend: "Rote Punkte repräsentieren isolierte Blöcke.",
 
     ruleConformanceLegend:
       "Zeigt die Verteilung der bestandenen und nicht bestandenen Regeln",
@@ -432,9 +431,8 @@ export const translations = {
     packageDistributionLegend:
       "Shows how many items are included in each package.",
 
-    isolatedELements: "Isolated Elements",
-    isolatedELementsLegend:
-      "Red dots represent isolated elements. Connected elements form clusters.",
+    isolatedELements: "Isolated Blocks",
+    isolatedELementsLegend: "Red dots represent isolated elements.",
 
     possibleProblems: "Possible Problems",
 

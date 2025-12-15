@@ -118,7 +118,7 @@ export default function RelationsPage() {
         <div className="grid grid-cols-1 md:grid-cols-1 [@media(min-width:1350px)]:grid-cols-2 gap-4">
           <RelationsGraph relations={relations} elements={elements} />
 
-          <RelationsHeatmap relations={relations} />
+          <RelationsHeatmap relations={relations} elements={elements} />
         </div>
       </div>
     </main>

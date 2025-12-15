@@ -1,193 +1,186 @@
 "use client";
 
-import * as d3 from "d3";
-import { useEffect, useRef, useState } from "react";
-import { useAccentColor } from "@/hooks/useAccentColor";
+import dynamic from "next/dynamic";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useTheme } from "next-themes";
-import { AlertTriangle } from "lucide-react";
 import { useChartBackground } from "@/hooks/useChartBackground";
-import { translations } from "@/lib/i18n";
+import { useAccentColor } from "@/hooks/useAccentColor";
+import { AlertTriangle } from "lucide-react";
 import { useLanguage } from "@/hooks/useLanguage";
+import { translations } from "@/lib/i18n";
+
+const ForceGraph2D = dynamic(
+  () => import("react-force-graph-2d").then((m) => m.default || m),
+  { ssr: false }
+);
 
 // -------------------------
-// 💡 TypeScript Typen
+// Types
 // -------------------------
-type NodeType = {
+type Element = {
   id: string;
-  name: string;
-  type: string;
-  isolated: boolean;
-  x?: number;
-  y?: number;
-  fx?: number | null;
-  fy?: number | null;
+  name?: string;
+  type?: string;
+  stereotype?: string;
+  parentId?: string;
 };
 
-type LinkType = {
+type Relation = {
+  source?: string;
+  target?: string;
+  type?: string;
+};
+
+type GraphLink = {
   source: string;
   target: string;
 };
 
+// -------------------------
+// Component
+// -------------------------
 export default function IsolatedElementsChart({
   relations,
   elements,
 }: {
-  relations: any[];
-  elements: any[];
+  relations: Relation[];
+  elements: Element[];
 }) {
-  const ref = useRef<SVGSVGElement | null>(null);
-  const accentColor = useAccentColor();
   const { theme } = useTheme();
   const chartBackground = useChartBackground();
-  const containerRef = useRef<HTMLDivElement>(null);
+  const accentColor = useAccentColor();
   const { language } = useLanguage();
-  const [size, setSize] = useState({ width: 0, height: 600 });
+
+  const containerRef = useRef<HTMLDivElement>(null);
+  const graphRef = useRef<any>(null);
+  const [size, setSize] = useState({ width: 0, height: 500 });
 
   // -------------------------
-  // 🔄 Resize Handling
+  // Resize handling
   // -------------------------
   useEffect(() => {
-    function updateSize() {
-      if (containerRef.current) {
-        setSize({
-          width: containerRef.current.offsetWidth,
-          height: containerRef.current.offsetHeight,
-        });
-      }
-    }
-    updateSize();
-    window.addEventListener("resize", updateSize);
-    return () => window.removeEventListener("resize", updateSize);
+    if (!containerRef.current) return;
+
+    const update = () =>
+      setSize({
+        width: containerRef.current!.offsetWidth,
+        height: containerRef.current!.offsetHeight,
+      });
+
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
   }, []);
 
   // -------------------------
-  // 🔥 D3 Graph Rendering
+  // Block-Erkennung
+  // ⚠️ EXAKT wie im RelationsGraph
   // -------------------------
-  useEffect(() => {
-    if (!elements?.length || !ref.current) return;
+  function isBlock(e?: Element) {
+    if (!e) return false;
 
-    // 🔍 Verbundene Elemente berechnen
-    const connected = new Set(
-      relations.flatMap((r: any) => [r.source, r.target])
+    const type = e.type?.toLowerCase() ?? "";
+    const stereo = e.stereotype?.toLowerCase() ?? "";
+
+    return (
+      type === "uml:class" || // 🔥 DAS FEHLTE
+      type.includes("sysml:block") ||
+      stereo === "block"
     );
+  }
 
-    const nodes: NodeType[] = elements.map((el: any) => ({
-      id: el.id,
-      name: el.name || "Unbenannt",
-      type: el.type?.replace("uml:", "").replace("sysml:", "") || "Unknown",
-      isolated: !connected.has(el.id),
-    }));
+  // -------------------------
+  // Lookup
+  // -------------------------
+  const elementById = useMemo(() => {
+    const map = new Map<string, Element>();
+    elements.forEach((e) => map.set(e.id, e));
+    return map;
+  }, [elements]);
 
-    const nodeIds = new Set(nodes.map((n) => n.id));
+  // -------------------------
+  // RelationsGraph-Links (1:1 kopiert)
+  // -------------------------
+  const links = useMemo<GraphLink[]>(() => {
+    return relations
+      .map((r): GraphLink | null => {
+        if (!r.source || !r.target) return null;
 
-    const links: LinkType[] = (relations ?? [])
-      .filter((r: any) => nodeIds.has(r.source) && nodeIds.has(r.target))
-      .map((r: any) => ({
-        source: r.source,
-        target: r.target,
-      }));
+        const src = elementById.get(r.source);
+        const tgt = elementById.get(r.target);
 
-    const svgEl = d3.select(ref.current);
-    svgEl.selectAll("*").remove();
+        const srcBlock =
+          src?.stereotype === "block"
+            ? src
+            : src?.parentId
+            ? elementById.get(src.parentId)
+            : null;
 
-    const width = ref.current.clientWidth || 800;
-    const height = 400;
+        const tgtBlock =
+          tgt?.stereotype === "block"
+            ? tgt
+            : tgt?.parentId
+            ? elementById.get(tgt.parentId)
+            : null;
 
-    const svg = svgEl
-      .attr("viewBox", [0, 0, width, height])
-      .attr("width", "100%")
-      .attr("height", height);
+        if (!srcBlock || !tgtBlock) return null;
+        if (srcBlock.id === tgtBlock.id) return null;
 
-    // -------------------------
-    // ⚙️ Force Simulation
-    // -------------------------
-    const simulation = d3
-      .forceSimulation(nodes as any)
-      .force(
-        "link",
-        d3
-          .forceLink(links as any)
-          .id((d: any) => d.id)
-          .distance(50)
-      )
-      .force("charge", d3.forceManyBody().strength(-80))
-      .force("center", d3.forceCenter(width / 2, height / 2));
+        return {
+          source: srcBlock.id,
+          target: tgtBlock.id,
+        };
+      })
+      .filter((l): l is GraphLink => l !== null);
+  }, [relations, elementById]);
 
-    // -------------------------
-    // 🔹 Linien
-    // -------------------------
-    const link = svg
-      .append("g")
-      .attr("stroke", theme === "dark" ? "#4b5563" : "#d1d5db")
-      .attr("stroke-opacity", 0.6)
-      .selectAll("line")
-      .data(links)
-      .join("line")
-      .attr("stroke-width", 1.5);
+  const relationGraphBlockNames = useMemo(() => {
+    const names = new Set<string>();
 
-    // -------------------------
-    // 🔹 Knoten
-    // -------------------------
-    const node = svg
-      .append("g")
-      .selectAll("circle")
-      .data(nodes)
-      .join("circle")
-      .attr("r", 6)
-      .attr("fill", (d: NodeType) => (d.isolated ? "#ef4444" : accentColor))
-      .attr("stroke", theme === "dark" ? "#111827" : "#ffffff")
-      .attr("stroke-width", 1.5);
+    links.forEach((l) => {
+      const src = elementById.get(l.source);
+      const tgt = elementById.get(l.target);
 
-    // Drag — mit Cast für TS
-    // Drag – vollständig aus Typprüfung rausnehmen
-    (node as any).call(
-      (d3.drag() as any)
-        .on("start", (event: any, d: NodeType) => {
-          if (!event.active) simulation.alphaTarget(0.3).restart();
-          d.fx = d.x;
-          d.fy = d.y;
-        })
-        .on("drag", (event: any, d: NodeType) => {
-          d.fx = event.x;
-          d.fy = event.y;
-        })
-        .on("end", (event: any, d: NodeType) => {
-          if (!event.active) simulation.alphaTarget(0);
-          d.fx = null;
-          d.fy = null;
-        })
-    );
-
-    // -------------------------
-    // 🔹 Labels
-    // -------------------------
-    const labels = svg
-      .append("g")
-      .selectAll("text")
-      .data(nodes)
-      .join("text")
-      .text((d: NodeType) => (d.isolated ? "⚠︎ " + d.name : d.name))
-      .attr("font-size", 10)
-      .attr("fill", theme === "dark" ? "#e5e7eb" : "#374151")
-      .attr("text-anchor", "middle");
-
-    // -------------------------
-    // 🔁 Simulation Updates
-    // -------------------------
-    simulation.on("tick", () => {
-      link
-        .attr("x1", (d: any) => d.source.x)
-        .attr("y1", (d: any) => d.source.y)
-        .attr("x2", (d: any) => d.target.x)
-        .attr("y2", (d: any) => d.target.y);
-
-      node.attr("cx", (d: any) => d.x).attr("cy", (d: any) => d.y);
-      labels.attr("x", (d: any) => d.x).attr("y", (d: any) => d.y - 10);
+      if (src?.name) names.add(src.name);
+      if (tgt?.name) names.add(tgt.name);
     });
-  }, [relations, elements, accentColor, theme]);
+
+    return names;
+  }, [links, elementById]);
 
   // -------------------------
-  // 📦 UI
+  // Block-IDs aus RelationsGraph
+  // -------------------------
+  const connectedBlockIds = useMemo(() => {
+    const ids = new Set<string>();
+    links.forEach((l) => {
+      ids.add(l.source);
+      ids.add(l.target);
+    });
+    return ids;
+  }, [links]);
+
+  // -------------------------
+  // 🚨 Isolierte Blöcke
+  // = Blöcke, die NICHT im RelationsGraph vorkommen
+  // -------------------------
+  const isolatedNodes = useMemo(() => {
+    return elements
+      .filter((e) => isBlock(e))
+      .filter((e) => e.name && !relationGraphBlockNames.has(e.name))
+      .map((e) => ({
+        id: e.id,
+        name: e.name!,
+      }));
+  }, [elements, relationGraphBlockNames]);
+
+  useEffect(() => {
+    if (!graphRef.current) return;
+    graphRef.current.d3Force("charge")?.strength(-300);
+  }, [isolatedNodes]);
+
+  // -------------------------
+  // UI
   // -------------------------
   return (
     <section className="rounded-2xl dark:bg-gray-800 bg-white p-6 shadow-sm relative">
@@ -200,9 +193,23 @@ export default function IsolatedElementsChart({
 
       <div
         ref={containerRef}
-        className="rounded-2xl overflow-hidden w-full bg-transparent h-[500px] relative"
+        className="rounded-2xl overflow-hidden w-full bg-transparent h-[500px] relative flex items-center justify-center"
       >
-        <svg ref={ref}></svg>
+        {isolatedNodes.length === 0 ? (
+          <div className="text-sm text-gray-500 dark:text-gray-300 flex items-center gap-2">
+            <AlertTriangle className="h-4 w-4 text-green-500" />
+            <span>Keine isolierten Blöcke vorhanden</span>
+          </div>
+        ) : (
+          <ForceGraph2D
+            ref={graphRef}
+            graphData={{ nodes: isolatedNodes, links: [] }}
+            width={size.width}
+            height={size.height}
+            nodeLabel={(n: any) => n.name}
+            nodeColor={() => "#ef4444"}
+          />
+        )}
       </div>
 
       <p className="text-xs text-gray-500 mt-3 dark:text-gray-300">
