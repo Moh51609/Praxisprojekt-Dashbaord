@@ -19,6 +19,8 @@ import {
 } from "@/components/ui/tooltip";
 import { translations } from "@/lib/i18n";
 import { useLanguage } from "@/hooks/useLanguage";
+import { useEffect, useState } from "react";
+import { useAutoLoadChart } from "@/hooks/useAutoLoadChart";
 
 export default function DiagramTypeCoverageTable({ data }: { data: any }) {
   const accent = useAccentColor();
@@ -79,6 +81,29 @@ export default function DiagramTypeCoverageTable({ data }: { data: any }) {
     count: diagramMap[type]?.length ?? 0,
     elements: diagramMap[type] ?? [],
   }));
+
+  const [visible, setVisible] = useState(false);
+  const autoLoad = useAutoLoadChart();
+  useEffect(() => {
+    setVisible(autoLoad);
+  }, [autoLoad]);
+
+  if (!visible) {
+    return (
+      <div className="p-8 text-center dark:bg-gray-800 bg-white rounded-2xl  h-[795px] items-center flex justify-center flex-col shadow-sm">
+        <p className="text-gray-600 dark:text-gray-200 mb-4">
+          {translations[language].loadChart}
+        </p>
+        <button
+          className="px-4 py-2 rounded-lg text-white"
+          style={{ backgroundColor: accent }}
+          onClick={() => setVisible(true)}
+        >
+          {translations[language].loadNow}{" "}
+        </button>
+      </div>
+    );
+  }
 
   return (
     <section className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-6 flex flex-col justify-between">

@@ -195,24 +195,13 @@ export default function SettingsPage() {
           </div>
         </section>
 
-        {/* 📊 Daten & Diagramme */}
         <section className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-md transition-all">
           <h2 className="text-lg font-semibold mb-4 flex items-center gap-2 text-gray-800 dark:text-gray-100">
             <Database className="h-5 w-5 " style={{ color: accentColor }} />
             {translations[language].dataAndCharts}
           </h2>
 
-          <div className="space-y-6 text-gray-700 dark:text-gray-300">
-            <div className="flex items-center justify-between">
-              <span>{translations[language].maxElements}</span>
-              <Slider
-                defaultValue={[50]}
-                max={500}
-                step={10}
-                className="w-40"
-              />
-            </div>
-
+          <div className="space-y-10 pt-5 text-gray-700 dark:text-gray-300 flex justify-end flex-col">
             <div className="flex items-center justify-between">
               <span>{translations[language].chartZoom}</span>
               <Switch
@@ -247,7 +236,6 @@ export default function SettingsPage() {
           </div>
         </section>
 
-        {/* 🧩 Benutzeroberfläche */}
         <section className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-md transition-all">
           <h2 className="text-lg font-semibold mb-4 flex items-center gap-2 text-gray-800 dark:text-gray-100">
             <Sliders className="h-5 w-5 " style={{ color: accentColor }} />
@@ -328,7 +316,6 @@ export default function SettingsPage() {
           </div>
         </section>
 
-        {/* 🔒 Datenschutz & System */}
         <section className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-md transition-all">
           <h2 className="text-lg font-semibold mb-4 flex items-center gap-2 text-gray-800 dark:text-gray-100">
             <Globe className="h-5 w-5 " style={{ color: accentColor }} />

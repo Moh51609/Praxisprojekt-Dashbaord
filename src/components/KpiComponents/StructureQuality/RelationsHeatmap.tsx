@@ -9,6 +9,8 @@ import { useEffect, useState, useMemo, useRef } from "react";
 import { useAutoLoadChart } from "@/hooks/useAutoLoadChart";
 import { useLanguage } from "@/hooks/useLanguage";
 import { translations } from "@/lib/i18n";
+import { useAnimation } from "framer-motion";
+import { useAnimationsEnabled } from "@/hooks/useAnimation";
 
 export default function RelationsHeatmap({
   relations,
@@ -19,36 +21,29 @@ export default function RelationsHeatmap({
 }) {
   const chartZoom = useChartZoom();
   const accentColor = useAccentColor();
+  const useAnimation = useAnimationsEnabled();
   const autoLoad = useAutoLoadChart();
   const [visible, setVisible] = useState(true);
   const zoomRef = useRef<SVGSVGElement | null>(null);
   const { language } = useLanguage();
   const [transform, setTransform] = useState(d3.zoomIdentity);
 
-  // -------------------------
-  // 🔍 Lookup
-  // -------------------------
   const elementById = useMemo(() => {
     const map = new Map<string, any>();
     elements.forEach((e) => map.set(e.id, e));
     return map;
   }, [elements]);
 
-  // -------------------------
-  // 🔍 Block-Erkennung (IDENTISCH zu RelationsGraph)
-  // -------------------------
   function isBlock(e?: any) {
     if (!e) return false;
 
     const type = e.type?.toLowerCase() ?? "";
     const stereo = (e.stereotype ?? "").toLowerCase();
 
-    // SysML / UML Block-artige Klassen
     if (type === "uml:class") return true;
 
     if (type.includes("sysml:block")) return true;
 
-    // System / Kontext / Domain zählen fachlich als Block
     if (
       stereo.includes("system") ||
       stereo.includes("kontext") ||
@@ -60,9 +55,6 @@ export default function RelationsHeatmap({
     return false;
   }
 
-  // -------------------------
-  // 🔁 Element → Block auflösen
-  // -------------------------
   function resolveToBlock(el?: any): any | null {
     if (!el) return null;
     if (isBlock(el)) return el;
@@ -70,9 +62,6 @@ export default function RelationsHeatmap({
     return null;
   }
 
-  // -------------------------
-  // 🔥 Beziehungen pro Block zählen (KERNFIX)
-  // -------------------------
   const blockCounts = useMemo<Record<string, number>>(() => {
     const counts: Record<string, number> = {};
 
@@ -84,12 +73,6 @@ export default function RelationsHeatmap({
 
       const srcBlock = resolveToBlock(srcEl);
       const tgtBlock = resolveToBlock(tgtEl);
-      console.log(`🔍 Relation ${i}`);
-      console.log("  raw:", r.type);
-      console.log("  srcEl:", srcEl?.name, srcEl?.type, srcEl?.stereotype);
-      console.log("  tgtEl:", tgtEl?.name, tgtEl?.type, tgtEl?.stereotype);
-      console.log("  srcBlock:", srcBlock?.name);
-      console.log("  tgtBlock:", tgtBlock?.name);
 
       if (!srcBlock || !tgtBlock) return;
       if (srcBlock.id === tgtBlock.id) return;
@@ -104,9 +87,6 @@ export default function RelationsHeatmap({
     return counts;
   }, [relations, elementById]);
 
-  // -------------------------
-  // 🔹 Treemap-Daten
-  // -------------------------
   const data = useMemo(
     () =>
       Object.entries(blockCounts).map(([name, count]) => ({
@@ -116,18 +96,12 @@ export default function RelationsHeatmap({
     [blockCounts]
   );
 
-  // -------------------------
-  // 🎨 Farbskala
-  // -------------------------
   const getColor = (value: number) => {
-    if (value > 15) return "#f59e0b"; // orange
-    if (value > 8) return "#facc15"; // gelb
+    if (value > 15) return "#f59e0b";
+    if (value > 8) return "#facc15";
     return "#10b981"; // grün
   };
 
-  // -------------------------
-  // 🔍 Zoom
-  // -------------------------
   useEffect(() => {
     if (!zoomRef.current) return;
 
@@ -146,14 +120,16 @@ export default function RelationsHeatmap({
     }
   }, [chartZoom]);
 
+  const hasData = data.length > 0;
+
   useEffect(() => {
     setVisible(autoLoad);
   }, [autoLoad]);
 
   if (!visible) {
     return (
-      <div className="flex flex-col min-h-[400px] flex-1 items-center justify-center dark:bg-gray-800 bg-white rounded-2xl shadow-sm">
-        <p className="text-gray-600 dark:text-gray-200 mb-4 text-center">
+      <div className="p-8 text-center dark:bg-gray-800 bg-white rounded-2xl  h-[575px] items-center flex justify-center flex-col shadow-sm">
+        <p className="text-gray-600 dark:text-gray-200 mb-4">
           {translations[language].loadChart}
         </p>
         <button
@@ -161,12 +137,21 @@ export default function RelationsHeatmap({
           style={{ backgroundColor: accentColor }}
           onClick={() => setVisible(true)}
         >
-          {translations[language].loadNow}
+          {translations[language].loadNow}{" "}
         </button>
       </div>
     );
   }
-
+  if (!hasData) {
+    return (
+      <section className="bg-white flex-col dark:bg-gray-800 h-[625px]  items-center flex justify-center rounded-2xl shadow-sm p-6 text-center text-gray-500 dark:text-gray-400">
+        <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100 flex items-center gap-2">
+          {translations[language].relationsIntensity}
+        </h2>
+        {translations[language].noData}
+      </section>
+    );
+  }
   return (
     <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-6">
       <div className="flex flex-row gap-1">
@@ -187,6 +172,7 @@ export default function RelationsHeatmap({
                     dataKey="size"
                     nameKey="name"
                     aspectRatio={4 / 2}
+                    isAnimationActive={useAnimation}
                     stroke="#fff"
                     fill="#111827"
                     content={<CustomTreemapCell getColor={getColor} />}

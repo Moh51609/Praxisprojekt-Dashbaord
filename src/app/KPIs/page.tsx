@@ -161,6 +161,9 @@ export default function KPIs() {
 
   const SmellCount = filteredSmells.length;
 
+  const ruleBreakCount =
+    rules?.reduce((sum, r) => sum + (r.violations ?? 0), 0) ?? 0;
+
   const totalRules = rules?.length;
   const passingRules = rules?.filter((r) => r.passed).length ?? 0;
   const acceptRulesPercentage =
@@ -170,18 +173,6 @@ export default function KPIs() {
     ? data.elements.reduce((sum, e) => sum + (e.depth ?? 0), 0) /
       data.elements.length
     : 0;
-
-  const elementIds = new Set(data.elements.map((e) => e.id));
-
-  const connectedIds = new Set();
-  relations.forEach((r) => {
-    if (elementIds.has(r.source)) connectedIds.add(r.source);
-    if (elementIds.has(r.target)) connectedIds.add(r.target);
-  });
-
-  const connectivityPercent = Math.round(
-    (connectedIds.size / elementIds.size) * 100
-  );
 
   const existingElementTypes = new Set(data.elements.map((e) => e.type));
 
@@ -193,19 +184,19 @@ export default function KPIs() {
   const coveragePercent = Math.round((existingCount / possibleCount) * 100);
 
   const modelHealth =
-    100 -
-    SmellCount * 2 - // jedes Smell zieht 2% ab
-    (100 - acceptRulesPercentage) / 3 - // schlechte Regeln wirken negativ
-    avgDepth * 1.5; // tiefe Hierarchien senken Health
+    100 - SmellCount * 2 - (100 - acceptRulesPercentage) / 3 - avgDepth * 1.5;
+  const ruleBreakDensity =
+    data.elements.length > 0 ? ruleBreakCount / data.elements.length : 0;
 
   const healthPercent = Math.max(
     0,
     Math.min(
       100,
       100 -
-        SmellCount * 0.5 - // deutlich geringere Gewichtung
-        (100 - acceptRulesPercentage) * 0.2 -
-        avgDepth * 2 // moderate Bestrafung
+        SmellCount * 0.4 -
+        ruleBreakDensity * 40 -
+        (100 - acceptRulesPercentage) * 0.1 -
+        avgDepth * 2
     )
   );
 
@@ -243,32 +234,39 @@ export default function KPIs() {
       <div className="grid grid-cols-1  [@media(min-width:1800px)]:grid-cols-6 [@media(min-width:1200px)]:grid-cols-3  [@media(min-width:1000px)]:grid-cols-2 gap-4 justify-between py-4">
         <KpiCard
           title="Model Health"
-          value={`${healthPercent.toFixed(2)}%`}
+          value={`${healthPercent.toFixed(0)}%`}
+          subtitel="von 100%"
           icon={<HeartPlus style={{ color: accessColor }} />}
         />
         <KpiCard
           title="Accept Rules"
-          value={`${acceptRulesPercentage.toFixed(2)}%`}
+          subtitel="von 100%"
+          value={`${acceptRulesPercentage.toFixed(0)}%`}
           icon={<Scale style={{ color: accessColor }} />}
         />
         <KpiCard
           title="Model Smells"
+          subtitel="Je weniger desto besser"
           value={`${SmellCount}`}
           icon={<SprayCan style={{ color: accessColor }} />}
         />
         <KpiCard
           title="Avg. Depth"
+          subtitel="Je weniger desto besser"
           value={`${avgDepth.toFixed(1)}`}
           icon={<TreeDeciduous style={{ color: accessColor }} />}
         />
         <KpiCard
-          title="Connectivity"
-          value={`${connectivityPercent.toFixed(2)}%`}
-          icon={<Cable style={{ color: accessColor }} />}
+          title="Rule Breaks"
+          subtitel="Je weniger desto besser"
+          value={ruleBreakCount}
+          icon={<Cctv style={{ color: accessColor }} />}
         />
+
         <KpiCard
           title="Coverage"
-          value={`${coveragePercent.toFixed(2)}%`}
+          subtitel="von 100%"
+          value={`${coveragePercent.toFixed(0)}%`}
           icon={<Blend style={{ color: accessColor }} />}
         />
       </div>
@@ -460,10 +458,12 @@ function KpiCard({
   title,
   value,
   icon,
+  subtitel,
 }: {
   title: string;
   value: number | string;
   icon: React.ReactNode;
+  subtitel: string;
 }) {
   const accentColor = useAccentColor();
 
@@ -478,13 +478,8 @@ function KpiCard({
       <div className="mt-1 text-3xl dark:text-white font-bold text-gray-900">
         {value}
       </div>
-      <div className="flex gap-1 items-center ">
-        <ArrowUp className="h-3 w-3 text-green-500" />
-        <div className="font-bold text-xs text-green-500">5</div>
-        <div className="text-xs text-gray-500 font-medium">
-          seit letztem Commit
-        </div>
-      </div>
+
+      <div className="text-xs text-gray-500 font-medium">{subtitel}</div>
     </div>
   );
 }

@@ -15,13 +15,13 @@ export default function DonutCard({
   name,
   total,
   colors = [
-    "#3b82f6", // Blau
-    "#ec4899", // Indigo
-    "#10b981", // Grün
-    "#f59e0b", // Gelb
-    "#ef4444", // Rot
-    "#8b5cf6", // Violett
-    "#6366f1", // Pink
+    "#3b82f6",
+    "#ec4899",
+    "#10b981",
+    "#f59e0b",
+    "#ef4444",
+    "#8b5cf6",
+    "#6366f1",
   ],
 }: {
   title: string;
@@ -46,13 +46,16 @@ export default function DonutCard({
       .trim();
   }
 
+  const hasData =
+    Array.isArray(data) && data.length > 0 && data.some((d) => d.value > 0);
+
   useEffect(() => {
     setVisible(autoLoad);
   }, [autoLoad]);
 
   if (!visible) {
     return (
-      <div className="flex flex-col  h-full flex-1 items-center justify-center  dark:bg-gray-800 bg-white rounded-2xl shadow-sm">
+      <div className="flex flex-col   flex-1 h-[370px] items-center justify-center  dark:bg-gray-800 bg-white rounded-2xl shadow-sm">
         <p className="text-gray-600 dark:text-gray-200 mb-4 text-center">
           {translations[language].loadChart}
         </p>
@@ -64,6 +67,17 @@ export default function DonutCard({
           {translations[language].loadNow}
         </button>
       </div>
+    );
+  }
+
+  if (!hasData) {
+    return (
+      <section className="bg-white dark:bg-gray-800 h-[370px]  items-center flex justify-center flex-col rounded-2xl shadow-sm p-6 text-center text-gray-500 dark:text-gray-400">
+        <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100 flex items-center gap-2">
+          {title}
+        </h2>
+        {translations[language].noData}
+      </section>
     );
   }
 
@@ -86,7 +100,6 @@ export default function DonutCard({
         )}
       </div>
       <div className="flex flex-row  items-center justify-between h-full flex-1">
-        {/* 🟩 Linke Seite: Legende */}
         <div className="flex flex-col flex-wrap gap-2 text-xs text-gray-600 w-1/2 pl-2">
           <div className="flex flex-col gap-1 dark:text-gray-200">
             {data.map((d, i) => (
@@ -103,40 +116,44 @@ export default function DonutCard({
           </div>
         </div>
 
-        {/* 🟦 Rechte Seite: Donut-Diagramm */}
         <div className="h-52 w-1/2 flex items-center justify-center">
-          <ResponsiveContainer>
-            <PieChart>
-              <Pie
-                data={data}
-                dataKey="value"
-                nameKey="name"
-                innerRadius={50}
-                outerRadius={80}
-                isAnimationActive={animationEnabled}
-                paddingAngle={2}
-                // ⛔ Keine Beschriftungen direkt am Kreis
-                label={false}
-              >
-                {data.map((_, i) => (
-                  <Cell key={i} fill={colors[i % colors.length]} />
-                ))}
-              </Pie>
-              <Tooltip
-                content={({ payload }) => {
-                  if (!payload?.length) return null;
-                  const { name, value } = payload[0].payload;
+          {hasData ? (
+            <ResponsiveContainer>
+              <PieChart>
+                <Pie
+                  data={data}
+                  dataKey="value"
+                  nameKey="name"
+                  innerRadius={50}
+                  outerRadius={80}
+                  isAnimationActive={animationEnabled}
+                  paddingAngle={2}
+                  label={false}
+                >
+                  {data.map((_, i) => (
+                    <Cell key={i} fill={colors[i % colors.length]} />
+                  ))}
+                </Pie>
+                <Tooltip
+                  content={({ payload }) => {
+                    if (!payload?.length) return null;
+                    const { name, value } = payload[0].payload;
 
-                  return (
-                    <div className="  bg-white border border-gray-200 text-black p-2 rounded shadow text-xs">
-                      <strong>{name}</strong>
-                      <div className="text-gray-600">{value}</div>
-                    </div>
-                  );
-                }}
-              />
-            </PieChart>
-          </ResponsiveContainer>
+                    return (
+                      <div className="  bg-white border border-gray-200 text-black p-2 rounded shadow text-xs">
+                        <strong>{name}</strong>
+                        <div className="text-gray-600">{value}</div>
+                      </div>
+                    );
+                  }}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+          ) : (
+            <p className="text-sm text-gray-500 dark:text-gray-400 text-center">
+              {translations[language].noData}
+            </p>
+          )}
         </div>
       </div>
     </div>

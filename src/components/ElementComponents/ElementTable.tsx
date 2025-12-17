@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useAccentColor } from "@/hooks/useAccentColor";
 import {
   Table,
@@ -20,6 +20,7 @@ import {
 import { Layers, Filter, ChevronLeft, ChevronRight } from "lucide-react";
 import { translations } from "@/lib/i18n";
 import { useLanguage } from "@/hooks/useLanguage";
+import { useAutoLoadChart } from "@/hooks/useAutoLoadChart";
 
 const ALLOWED_TYPES = [
   "Class",
@@ -51,7 +52,6 @@ export default function ElementTable({ data }: { data: any[] }) {
 
     if (!ALLOWED_TYPES.includes(clean)) return false;
 
-    // 🔴 Property-Sonderfilter
     if (clean === "Property") {
       return isValidProperty(e);
     }
@@ -96,10 +96,31 @@ export default function ElementTable({ data }: { data: any[] }) {
 
   const handlePrev = () => setCurrentPage((p) => Math.max(p - 1, 1));
   const handleNext = () => setCurrentPage((p) => Math.min(p + 1, totalPages));
+  const [visible, setVisible] = useState(false);
+  const autoLoad = useAutoLoadChart();
+  useEffect(() => {
+    setVisible(autoLoad);
+  }, [autoLoad]);
+
+  if (!visible) {
+    return (
+      <div className="p-8 text-center dark:bg-gray-800 bg-white rounded-2xl  h-[425px] items-center flex justify-center flex-col shadow-sm">
+        <p className="text-gray-600 dark:text-gray-200 mb-4">
+          {translations[language].loadChart}
+        </p>
+        <button
+          className="px-4 py-2 rounded-lg text-white"
+          style={{ backgroundColor: accent }}
+          onClick={() => setVisible(true)}
+        >
+          {translations[language].loadNow}{" "}
+        </button>
+      </div>
+    );
+  }
 
   return (
-    <section className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-6">
-      {/* HEADER */}
+    <section className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-6 min-h-[500px]">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-md font-semibold text-gray-800 dark:text-gray-100 flex items-center gap-2">
           <Layers className="h-5 w-5" style={{ color: accent }} />
@@ -109,7 +130,6 @@ export default function ElementTable({ data }: { data: any[] }) {
         <div className="flex gap-2 items-center">
           <Filter className="h-4 w-4 text-gray-500" />
 
-          {/* TYPE FILTER */}
           <Select
             value={filterType}
             onValueChange={(v) => {
@@ -175,8 +195,8 @@ export default function ElementTable({ data }: { data: any[] }) {
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-6">
-                  Keine Elemente gefunden.
+                <TableCell colSpan={7} className="text-center py-40">
+                  {translations[language].noData}
                 </TableCell>
               </TableRow>
             )}
@@ -184,11 +204,8 @@ export default function ElementTable({ data }: { data: any[] }) {
         </Table>
       </div>
 
-      {/* PAGINATION */}
-      {/* PAGINATION */}
       {totalPages > 1 && (
         <div className="flex justify-center items-center mt-4 gap-2">
-          {/* Prev Button */}
           <button
             onClick={handlePrev}
             disabled={currentPage === 1}
@@ -209,7 +226,6 @@ export default function ElementTable({ data }: { data: any[] }) {
 
             const pageButtons = [];
 
-            // Zeige "..." wenn links abgeschnitten
             if (start > 1) {
               pageButtons.push(
                 <button
@@ -240,7 +256,6 @@ export default function ElementTable({ data }: { data: any[] }) {
               );
             }
 
-            // Zeige "..." wenn rechts abgeschnitten
             if (end < totalPages) {
               pageButtons.push(
                 <button
@@ -255,7 +270,6 @@ export default function ElementTable({ data }: { data: any[] }) {
             return pageButtons;
           })()}
 
-          {/* Next Button */}
           <button
             onClick={handleNext}
             disabled={currentPage === totalPages}

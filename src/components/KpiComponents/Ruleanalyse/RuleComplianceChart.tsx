@@ -5,8 +5,10 @@ import { useChartBackground } from "@/hooks/useChartBackground";
 import { useChartTooltipStyle } from "@/hooks/useChartTooltipStyle";
 import { useLanguage } from "@/hooks/useLanguage";
 import { translations } from "@/lib/i18n";
-import { Activity } from "react";
+import { Activity, useEffect, useState } from "react";
 import { ActivityIcon, Scale } from "lucide-react";
+import { useAnimationsEnabled } from "@/hooks/useAnimation";
+import { useAutoLoadChart } from "@/hooks/useAutoLoadChart";
 
 export default function RuleComplianceChart({ rules }: { rules: any[] }) {
   const accent = useAccentColor();
@@ -14,7 +16,10 @@ export default function RuleComplianceChart({ rules }: { rules: any[] }) {
   const failed = rules.filter((r) => !r.passed).length;
   const percentage = Math.round((passed / rules.length) * 100);
   const tooltipStyle = useChartTooltipStyle();
+  const useAnimaiton = useAnimationsEnabled();
   const { language } = useLanguage();
+  const [visible, setVisible] = useState(false);
+  const autoLoad = useAutoLoadChart();
 
   const chartData = [
     { name: "Bestanden", value: passed },
@@ -22,6 +27,27 @@ export default function RuleComplianceChart({ rules }: { rules: any[] }) {
   ];
 
   const COLORS = [accent, "#ef4444"];
+
+  useEffect(() => {
+    setVisible(autoLoad);
+  }, [autoLoad]);
+
+  if (!visible) {
+    return (
+      <div className="p-8 text-center dark:bg-gray-800 bg-white rounded-2xl  h-[350px] items-center flex justify-center flex-col shadow-sm">
+        <p className="text-gray-600 dark:text-gray-200 mb-4">
+          {translations[language].loadChart}
+        </p>
+        <button
+          className="px-4 py-2 rounded-lg text-white"
+          style={{ backgroundColor: accent }}
+          onClick={() => setVisible(true)}
+        >
+          {translations[language].loadNow}{" "}
+        </button>
+      </div>
+    );
+  }
 
   return (
     <section className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm flex flex-col justify-between">
@@ -44,6 +70,7 @@ export default function RuleComplianceChart({ rules }: { rules: any[] }) {
                 paddingAngle={3}
                 startAngle={90}
                 endAngle={450}
+                isAnimationActive={useAnimaiton}
               >
                 {chartData.map((_, i) => (
                   <Cell key={i} fill={COLORS[i]} />

@@ -9,11 +9,9 @@ import * as d3 from "d3";
 import { useAutoLoadChart } from "@/hooks/useAutoLoadChart";
 import { useLanguage } from "@/hooks/useLanguage";
 import { translations } from "@/lib/i18n";
+import { useAnimateMini } from "framer-motion";
+import { useAnimationsEnabled } from "@/hooks/useAnimation";
 
-/**
- * 🔥 Heatmap zur Darstellung der Smell-Dichte im Modell.
- * Zeigt Packages oder Blöcke, die besonders viele Smells enthalten.
- */
 export default function SmellHotspotHeatmap({ smells }: { smells: any[] }) {
   const accentColor = useAccentColor();
   const chartZoom = useChartZoom();
@@ -22,8 +20,8 @@ export default function SmellHotspotHeatmap({ smells }: { smells: any[] }) {
   const [visible, setVisible] = useState(true);
   const zoomRef = useRef<SVGSVGElement | null>(null);
   const [transform, setTransform] = useState(d3.zoomIdentity);
+  const useAnimation = useAnimationsEnabled();
 
-  // 🔹 Aggregiere Smells nach Package oder Element
   const smellCounts: Record<string, number> = {};
   (smells ?? []).forEach((s) => {
     const key =
@@ -31,21 +29,18 @@ export default function SmellHotspotHeatmap({ smells }: { smells: any[] }) {
     smellCounts[key] = (smellCounts[key] ?? 0) + 1;
   });
 
-  // 🔹 Daten für die Treemap vorbereiten
   const data = Object.entries(smellCounts).map(([name, count]) => ({
     name,
     size: count,
   }));
 
-  // 🔹 Farbskala je nach Smell-Anzahl
   const getColor = (value: number) => {
-    if (value > 10) return "#ef4444"; // rot
-    if (value > 5) return "#f59e0b"; // orange
-    if (value > 2) return "#facc15"; // gelb
-    return "#10b981"; // grün
+    if (value > 10) return "#ef4444";
+    if (value > 5) return "#f59e0b";
+    if (value > 2) return "#facc15";
+    return "#10b981";
   };
 
-  // 🔹 Zoom-Verhalten aktivieren
   useEffect(() => {
     if (!zoomRef.current) return;
 
@@ -63,10 +58,21 @@ export default function SmellHotspotHeatmap({ smells }: { smells: any[] }) {
     }
   }, [chartZoom]);
 
-  // 🔹 Auto-Load steuern
   useEffect(() => {
     setVisible(autoLoad);
   }, [autoLoad]);
+
+  const hasData = data.length > 0;
+  if (!hasData) {
+    return (
+      <section className="bg-white dark:bg-gray-800 h-[575px]  items-center flex justify-center flex-col rounded-2xl shadow-sm p-6 text-center text-gray-500 dark:text-gray-400">
+        <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100 flex items-center gap-2">
+          {translations[language].smellHotspotInModel}
+        </h2>
+        {translations[language].noData}
+      </section>
+    );
+  }
 
   if (!visible) {
     return (
@@ -107,6 +113,7 @@ export default function SmellHotspotHeatmap({ smells }: { smells: any[] }) {
                     aspectRatio={4 / 4}
                     stroke="#fff"
                     fill="#8884d8"
+                    isAnimationActive={useAnimation}
                     content={<CustomTreemapCell getColor={getColor} />}
                   >
                     <Tooltip
@@ -137,7 +144,6 @@ export default function SmellHotspotHeatmap({ smells }: { smells: any[] }) {
   );
 }
 
-// 🔹 Benutzerdefinierte Zellen (Treemap-Kacheln)
 function CustomTreemapCell({ x, y, width, height, name, size, getColor }: any) {
   const color = getColor(size);
   return (

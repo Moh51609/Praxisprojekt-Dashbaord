@@ -9,6 +9,7 @@ import { useAutoLoadChart } from "@/hooks/useAutoLoadChart";
 import { Network } from "lucide-react";
 import { useLanguage } from "@/hooks/useLanguage";
 import { translations } from "@/lib/i18n";
+import { useAnimationsEnabled } from "@/hooks/useAnimation";
 
 const ForceGraph2D = dynamic(
   () => import("react-force-graph-2d").then((m) => m.default || m),
@@ -59,6 +60,7 @@ export default function RelationsGraph({
   const containerRef = useRef<HTMLDivElement>(null);
   const graphRef = useRef<any>(null);
   const [size, setSize] = useState({ width: 0, height: 500 });
+  const useAnimation = useAnimationsEnabled();
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -175,6 +177,18 @@ export default function RelationsGraph({
           {translations[language].loadNow}
         </button>
       </div>
+    );
+  }
+  const hasData = nodes.length > 0 && links.length > 0;
+
+  if (!hasData) {
+    return (
+      <section className="bg-white flex-col dark:bg-gray-800 items-center flex justify-center rounded-2xl shadow-sm p-6 text-center text-gray-500 dark:text-gray-400">
+        <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100 flex items-center gap-2">
+          {translations[language].relationshierarchy}
+        </h2>
+        {translations[language].noData}
+      </section>
     );
   }
 

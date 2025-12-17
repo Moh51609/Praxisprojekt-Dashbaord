@@ -79,13 +79,12 @@ export const translations = {
 
     elementTypeDistributionLegend:
       "Zeigt die Verteilung der Elementtypen im Modell.",
-    // Erscheinungsbild
-
+    noRuleBreak: "Keine Regelverstöße gefunden",
     patternNone: "kein Muster",
     patternGrid: "Kariert",
     patternDots: "Punkte",
     patternGeo: "Geometrisch",
-
+    noModellSmells: "Keine Model-Smells gefunden",
     ruleAnalysis: "Regelanalyse",
     coverageAnalysis: "Abdeckungsanalyse",
 
@@ -111,7 +110,8 @@ export const translations = {
 
     isolatedELements: "Isolierte Blöcke",
     isolatedELementsLegend: "Rote Punkte repräsentieren isolierte Blöcke.",
-
+    smellTrendLegend:
+      "  Zeigt die Entwicklung der Model-Smells über die Zeit getrennt nach Schweregrad",
     ruleConformanceLegend:
       "Zeigt die Verteilung der bestandenen und nicht bestandenen Regeln",
     passed: "bestanden",
@@ -133,7 +133,8 @@ export const translations = {
     diagramType: "Diagrammtype",
     available: "Vorhanden",
     number: "Anzahl",
-
+    noData: "Keine Daten vorhanden",
+    noCombinedRules: "Keine zusammenhängenden Regeln vorhanden",
     systemicCoverage: "Systemische Abdeckung",
     systemicCoverageLegend:
       "Zeigt den prozentualen Abdeckungsgrad je Modellkategorie (Block, Requirement, Port, Connector, Package).",
@@ -302,14 +303,13 @@ export const translations = {
     support: "Support",
     naming: "naming",
     connections: "connections",
-    // Categories
     appearance: "Appearance",
     dataAndCharts: "Data & Charts",
     interface: "User Interface",
     privacySystem: "Privacy & System",
 
-    // Appearance
-
+    noCombinedRules: "No Coherent Rules Available",
+    noRuleBreak: "There are no Rule Breaks",
     patternNone: "None",
     patternGrid: "Grid",
     patternDots: "Dots",
@@ -373,8 +373,9 @@ export const translations = {
     smellHotspotInModel: "Smell-Hotspot in Model",
     smellHotspotInModelLegend:
       "Shows in which packages or blocks a particularly high number of model smells occur.",
-
+    smellTrendLegend: "Shows the Development of the Smells over the Time",
     smellTrendInModel: "Model-Smells in Model",
+    noModellSmells: "There are no Model Smells",
 
     smellTrendChartInModel: "Model-Smells history in Model",
 
@@ -430,6 +431,8 @@ export const translations = {
     packageDistribution: "Package Distribution",
     packageDistributionLegend:
       "Shows how many items are included in each package.",
+
+    noData: "no Data availiable",
 
     isolatedELements: "Isolated Blocks",
     isolatedELementsLegend: "Red dots represent isolated elements.",

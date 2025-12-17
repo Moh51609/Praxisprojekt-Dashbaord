@@ -14,7 +14,7 @@ import {
   ShieldQuestionMark,
   Tangent,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { ParsedModel } from "@/types/model";
 import {
   ResponsiveContainer,
@@ -53,6 +53,8 @@ import { useModelRules } from "@/hooks/useModelRules";
 import OverallKpiTrendChart from "@/components/DashboardComponents/OverallKpiTrendChart";
 import UploadXmi from "@/components/UploadXmi";
 import { useModel } from "@/context/ModelContext";
+import { evaluateModelSmellsPure } from "@/lib/modelSmells";
+import ElementTypeDistributionChart from "@/components/KpiComponents/Coverageanalyse/ElementTypeDistributionChart";
 
 type CountByType = { name: string; value: number };
 
@@ -77,10 +79,22 @@ export default function DashboardPage() {
   const pageBackground = usePageBackground();
   const accessColor = useAccentColor();
   const { language } = useLanguage();
-  const [smells, setSmells] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const { rules, error: rulesError } = useModelRules(data);
   const [mounted, setMounted] = useState(false);
+
+  const smells = useMemo(() => {
+    if (!data) return [];
+    return evaluateModelSmellsPure(data, data.relationships ?? []);
+  }, [data]);
+
+  const filteredSmells = useMemo(
+    () =>
+      smells.filter(
+        (s) => s.packagePath && s.packagePath !== "-" && s.packagePath !== "—"
+      ),
+    [smells]
+  );
 
   useEffect(() => {
     setMounted(true);
@@ -108,20 +122,6 @@ export default function DashboardPage() {
     : [];
 
   const totalRelations = relations.length;
-  useEffect(() => {
-    async function loadSmells() {
-      try {
-        const res = await fetch("/api/model-smells");
-        const json = await res.json();
-        setSmells(json.smells || []);
-      } catch (err) {
-        console.error("Fehler beim Laden der Smells:", err);
-      } finally {
-        setLoading(false);
-      }
-    }
-    loadSmells();
-  }, []);
 
   if (!mounted) return null;
   return (
@@ -236,9 +236,9 @@ export default function DashboardPage() {
             <section className="grid grid-cols-1 gap-4  h-full justify-between  ">
               <ElementCoverageMiniChart />
             </section>
-            <SmellSeverityBarChart smells={smells} />
+            <SmellSeverityBarChart smells={filteredSmells} />
             <RuleComplianceChart rules={rules} />
-            <OverallKpiTrendChart />
+            <ElementTypeDistributionChart />
           </div>
         </>
       )}

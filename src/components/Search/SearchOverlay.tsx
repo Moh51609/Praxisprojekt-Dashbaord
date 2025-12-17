@@ -2,23 +2,43 @@
 
 import { useEffect, useRef, useState } from "react";
 import DetailPanel from "./DetailPanel";
+import { useModel } from "@/context/ModelContext";
 
 export default function SearchOverlay() {
   const [query, setQuery] = useState("");
   const [searchIndex, setSearchIndex] = useState<any[]>([]);
-
+  const { model } = useModel();
   const [showResults, setShowResults] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
   const resultsRef = useRef<HTMLDivElement>(null);
 
-  // Daten laden
   useEffect(() => {
-    fetch("/api/xmi")
-      .then((r) => r.json())
-      .then((j) => {
-        setSearchIndex(j.searchIndex ?? []);
+    if (!model) return;
+
+    const index: any[] = [];
+
+    // 🔹 Elemente
+    model.elements.forEach((e) => {
+      index.push({
+        id: e.id,
+        name: e.name,
+        kind: "element",
+        original: e,
       });
-  }, []);
+    });
+
+    // 🔹 Beziehungen
+    model.relationships?.forEach((r, i) => {
+      index.push({
+        id: `rel-${i}`,
+        name: `${r.type}`,
+        kind: "relation",
+        original: r,
+      });
+    });
+
+    setSearchIndex(index);
+  }, [model]);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -38,8 +58,12 @@ export default function SearchOverlay() {
   useEffect(() => {
     const handler = (e: any) => {
       const q = e.detail.trim();
+
       setQuery(q);
-      setShowResults(q.length >= 2); // 👈 Nur zeigen, wenn min. 2 Zeichen
+      setShowResults(q.length >= 2);
+
+      // ✅ WICHTIG: DetailPanel schließen bei neuer Suche
+      setSelectedItem(null);
     };
 
     window.addEventListener("global-search", handler);
@@ -81,17 +105,29 @@ export default function SearchOverlay() {
               key={i}
               className="p-2 bg-gray-700/70 rounded cursor-pointer hover:bg-gray-600/70"
               onClick={() => {
+                if (!model) return;
+
                 if (res.kind === "element") {
-                  setSelectedItem(res.original);
-                } else if (res.original?.parentElement) {
-                  setSelectedItem(res.original.parentElement);
-                } else {
-                  setSelectedItem(res.original);
+                  const element = res.original;
+
+                  const incoming = model.relationships.filter(
+                    (r) => r.target === element.id
+                  );
+
+                  const outgoing = model.relationships.filter(
+                    (r) => r.source === element.id
+                  );
+
+                  setSelectedItem({
+                    ...element,
+                    incoming,
+                    outgoing,
+                  });
                 }
               }}
             >
               <strong>{res.name}</strong>
-              <span className="text-gray-300"> — {res.kind}</span>
+              <span className="text-gray-300"></span>
 
               {res.parent && (
                 <span className="text-gray-400">

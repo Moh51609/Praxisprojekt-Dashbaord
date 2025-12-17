@@ -19,6 +19,9 @@ import * as d3 from "d3";
 import { useChartZoom } from "@/hooks/useChartZoom";
 import { translations } from "@/lib/i18n";
 import { useLanguage } from "@/hooks/useLanguage";
+import { useAnimationsEnabled } from "@/hooks/useAnimation";
+import { useAnimateMini, useAnimation } from "framer-motion";
+import { useAutoLoadChart } from "@/hooks/useAutoLoadChart";
 
 export default function CoverageTrendChart() {
   const accent = useAccentColor();
@@ -27,10 +30,10 @@ export default function CoverageTrendChart() {
   const chartBackground = useChartBackground();
   const svgRef = useRef<SVGSVGElement | null>(null);
   const [transform, setTransform] = useState(d3.zoomIdentity);
+  const useAnimation = useAnimationsEnabled();
   const chartZoom = useChartZoom();
 
   const { language } = useLanguage();
-  // 🔹 Beispielhafte Trenddaten (später evtl. aus API oder Modellhistorie)
   const [trendData, setTrendData] = useState([
     { date: "01.10", coverage: 56 },
     { date: "05.10", coverage: 62 },
@@ -46,7 +49,7 @@ export default function CoverageTrendChart() {
 
     const zoom = d3
       .zoom<SVGSVGElement, unknown>()
-      .scaleExtent([0.5, 3]) // Zoom-Level zwischen 0.5x und 3x
+      .scaleExtent([0.5, 3])
       .on("zoom", (event) => {
         setTransform(event.transform);
       });
@@ -54,9 +57,31 @@ export default function CoverageTrendChart() {
     svg.call(zoom as any);
 
     return () => {
-      svg.on(".zoom", null); // Cleanup bei Unmount
+      svg.on(".zoom", null);
     };
   }, [chartZoom]);
+  const [visible, setVisible] = useState(false);
+  const autoLoad = useAutoLoadChart();
+  useEffect(() => {
+    setVisible(autoLoad);
+  }, [autoLoad]);
+
+  if (!visible) {
+    return (
+      <div className="p-8 text-center dark:bg-gray-800 bg-white rounded-2xl  h-[350px] items-center flex justify-center flex-col shadow-sm">
+        <p className="text-gray-600 dark:text-gray-200 mb-4">
+          {translations[language].loadChart}
+        </p>
+        <button
+          className="px-4 py-2 rounded-lg text-white"
+          style={{ backgroundColor: accent }}
+          onClick={() => setVisible(true)}
+        >
+          {translations[language].loadNow}{" "}
+        </button>
+      </div>
+    );
+  }
 
   return (
     <section className="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm">
@@ -68,7 +93,6 @@ export default function CoverageTrendChart() {
       </div>
 
       <div className="relative rounded-2xl dark:bg-gray-800 bg-gray-50 p-4">
-        {/* Hintergrund-Gitter */}
         <div
           className="absolute inset-0 rounded-2xl pointer-events-none transition-colors duration-300"
           style={{
@@ -141,6 +165,7 @@ export default function CoverageTrendChart() {
                     <Line
                       type="monotone"
                       dataKey="coverage"
+                      isAnimationActive={useAnimation}
                       stroke={accent}
                       strokeWidth={2.5}
                       dot={{ r: 3 }}

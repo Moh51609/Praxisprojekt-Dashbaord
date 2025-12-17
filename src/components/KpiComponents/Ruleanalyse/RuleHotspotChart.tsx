@@ -13,11 +13,13 @@ import { Flame } from "lucide-react";
 import { useAccentColor } from "@/hooks/useAccentColor";
 import { useTheme } from "next-themes";
 import { useChartZoom } from "@/hooks/useChartZoom";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useChartBackground } from "@/hooks/useChartBackground";
 import { translations } from "@/lib/i18n";
 import * as d3 from "d3";
 import { useLanguage } from "@/hooks/useLanguage";
+import { useAnimationsEnabled } from "@/hooks/useAnimation";
+import { useAutoLoadChart } from "@/hooks/useAutoLoadChart";
 
 export default function RuleHotspotChart({
   hotspots,
@@ -31,14 +33,51 @@ export default function RuleHotspotChart({
   const svgRef = useRef<SVGSVGElement | null>(null);
   const [transform, setTransform] = useState(d3.zoomIdentity);
   const chartBackground = useChartBackground();
+  const useAnimation = useAnimationsEnabled();
   const { language } = useLanguage();
-  // Farbskala nach Intensität
+  const [visible, setVisible] = useState(false);
+  const autoLoad = useAutoLoadChart();
+
   const getColor = (value: number) => {
-    if (value > 10) return "#ef4444"; // rot
-    if (value > 6) return "#f97316"; // orange
-    if (value > 3) return "#facc15"; // gelb
-    return "#22c55e"; // grün
+    if (value > 10) return "#ef4444";
+    if (value > 6) return "#f97316";
+    if (value > 3) return "#facc15";
+    return "#22c55e";
   };
+
+  const hasData = hotspots.length > 0;
+
+  if (!hasData) {
+    return (
+      <section className="bg-white dark:bg-gray-800  items-center flex justify-center flex-col rounded-2xl shadow-sm p-6 text-center text-gray-500 dark:text-gray-400">
+        <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100 flex items-center gap-2">
+          {translations[language].ruleHotspot}{" "}
+        </h2>
+        {translations[language].noData}
+      </section>
+    );
+  }
+
+  useEffect(() => {
+    setVisible(autoLoad);
+  }, [autoLoad]);
+
+  if (!visible) {
+    return (
+      <div className="p-8 text-center dark:bg-gray-800 bg-white rounded-2xl  h-[650px] items-center flex justify-center flex-col shadow-sm">
+        <p className="text-gray-600 dark:text-gray-200 mb-4">
+          {translations[language].loadChart}
+        </p>
+        <button
+          className="px-4 py-2 rounded-lg text-white"
+          style={{ backgroundColor: accent }}
+          onClick={() => setVisible(true)}
+        >
+          {translations[language].loadNow}{" "}
+        </button>
+      </div>
+    );
+  }
 
   return (
     <section className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm">
@@ -122,7 +161,11 @@ export default function RuleHotspotChart({
                         );
                       }}
                     />
-                    <Bar dataKey="violations" radius={[6, 6, 6, 6]}>
+                    <Bar
+                      dataKey="violations"
+                      radius={[6, 6, 6, 6]}
+                      isAnimationActive={useAnimation}
+                    >
                       {hotspots.map((entry, index) => (
                         <Cell
                           key={`cell-${index}`}

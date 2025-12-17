@@ -29,7 +29,6 @@ export default function SortedPortDiagram({ data }: { data: ParsedModel }) {
   const { language } = useLanguage();
   const tooltipStyle = useChartTooltipStyle();
   const axisColor = theme === "dark" ? "#D1D5DB" : "#6B7280";
-  // 🔹 Ports sortieren und Top 10 ermitteln
   const topPorts =
     data.classStats
       ?.sort((a, b) => (b.ports ?? 0) - (a.ports ?? 0))
@@ -57,6 +56,19 @@ export default function SortedPortDiagram({ data }: { data: ParsedModel }) {
     );
   }
 
+  const hasData = topPorts.length > 0;
+
+  if (!hasData) {
+    return (
+      <section className="bg-white dark:bg-gray-800 h-[370px]  items-center flex justify-center flex-col rounded-2xl shadow-sm p-6 text-center text-gray-500 dark:text-gray-400">
+        <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100 flex items-center gap-2">
+          {translations[language].portsPerBlock}
+        </h2>
+        {translations[language].noData}
+      </section>
+    );
+  }
+
   return (
     <section className="rounded-2xl bg-white p-4  dark:bg-gray-800 shadow-sm">
       <div className="flex justify-between items-center mb-2 pl-6">
@@ -66,98 +78,101 @@ export default function SortedPortDiagram({ data }: { data: ParsedModel }) {
         </h2>
       </div>
 
-      <div className="w-full h-72">
-        <ResponsiveContainer>
-          {/* 🔹 Wichtig: Dieses BarChart ist aus 'recharts' */}
-          <BarChart
-            data={topPorts}
-            barSize={25}
-            barCategoryGap="2%"
-            margin={{ top: 10, right: 20, left: -10, bottom: 10 }}
-          >
-            <defs>
-              <linearGradient id="barColor" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#3B82F6" />
-                <stop offset="100%" stopColor="#60A5FA" />
-              </linearGradient>
-            </defs>
+      <div className="w-full h-72 flex items-center justify-center">
+        {topPorts.length === 0 ? (
+          <p className="text-sm text-gray-500 dark:text-gray-400 text-center">
+            {translations[language].noData}
+          </p>
+        ) : (
+          <ResponsiveContainer>
+            <BarChart
+              data={topPorts}
+              barSize={25}
+              barCategoryGap="2%"
+              margin={{ top: 10, right: 20, left: -10, bottom: 10 }}
+            >
+              <defs>
+                <linearGradient id="barColor" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#3B82F6" />
+                  <stop offset="100%" stopColor="#60A5FA" />
+                </linearGradient>
+              </defs>
 
-            {/* Achsen */}
-            <XAxis
-              dataKey="name"
-              axisLine={false}
-              tickLine={false}
-              interval={0}
-              height={40}
-              tick={({ x, y, payload }: any) => {
-                const shortLabel =
-                  payload.value?.slice(0, 2).toUpperCase() ?? "";
-                return (
-                  <text
-                    x={x}
-                    y={y + 12}
-                    textAnchor="middle"
-                    fill={axisColor}
-                    fontSize="11"
-                    fontFamily="Montserrat, sans-serif"
-                  >
-                    {shortLabel}
-                  </text>
-                );
-              }}
-            />
-            <YAxis
-              axisLine={false}
-              tickLine={false}
-              tick={{ fill: axisColor, fontSize: 11 }}
-            />
+              <XAxis
+                dataKey="name"
+                axisLine={false}
+                tickLine={false}
+                interval={0}
+                height={40}
+                tick={({ x, y, payload }: any) => {
+                  const shortLabel =
+                    payload.value?.slice(0, 2).toUpperCase() ?? "";
+                  return (
+                    <text
+                      x={x}
+                      y={y + 12}
+                      textAnchor="middle"
+                      fill={axisColor}
+                      fontSize="11"
+                      fontFamily="Montserrat, sans-serif"
+                    >
+                      {shortLabel}
+                    </text>
+                  );
+                }}
+              />
+              <YAxis
+                axisLine={false}
+                tickLine={false}
+                tick={{ fill: axisColor, fontSize: 11 }}
+              />
 
-            <Tooltip
-              content={({ payload }) => {
-                if (!payload?.length) return null;
-                const { name, value } = payload[0].payload;
-                return (
-                  <div className="  bg-white border border-gray-200 text-black p-2 rounded shadow text-xs">
-                    <strong>{name}</strong>
-                    <div className="text-gray-600">{value}</div>
-                  </div>
-                );
-              }}
-            />
+              <Tooltip
+                content={({ payload }) => {
+                  if (!payload?.length) return null;
+                  const { name, value } = payload[0].payload;
+                  return (
+                    <div className="  bg-white border border-gray-200 text-black p-2 rounded shadow text-xs">
+                      <strong>{name}</strong>
+                      <div className="text-gray-600">{value}</div>
+                    </div>
+                  );
+                }}
+              />
 
-            {/* Balken */}
-            <Bar
-              dataKey="value"
-              isAnimationActive={animationEnabled}
-              background={(props: any) => {
-                const { x, y, width, height } = props;
-                return (
-                  <rect
-                    x={x}
-                    y={y}
-                    width={width}
-                    height={height}
-                    rx={14}
-                    fill="rgba(229,231,235,0.6)"
-                  />
-                );
-              }}
-              shape={(props: any) => {
-                const { x, y, width, height } = props;
-                return (
-                  <rect
-                    x={x}
-                    y={y}
-                    width={width}
-                    height={height}
-                    rx={14}
-                    fill={accessColor}
-                  />
-                );
-              }}
-            />
-          </BarChart>
-        </ResponsiveContainer>
+              <Bar
+                dataKey="value"
+                isAnimationActive={animationEnabled}
+                background={(props: any) => {
+                  const { x, y, width, height } = props;
+                  return (
+                    <rect
+                      x={x}
+                      y={y}
+                      width={width}
+                      height={height}
+                      rx={14}
+                      fill="rgba(229,231,235,0.6)"
+                    />
+                  );
+                }}
+                shape={(props: any) => {
+                  const { x, y, width, height } = props;
+                  return (
+                    <rect
+                      x={x}
+                      y={y}
+                      width={width}
+                      height={height}
+                      rx={14}
+                      fill={accessColor}
+                    />
+                  );
+                }}
+              />
+            </BarChart>
+          </ResponsiveContainer>
+        )}
       </div>
     </section>
   );

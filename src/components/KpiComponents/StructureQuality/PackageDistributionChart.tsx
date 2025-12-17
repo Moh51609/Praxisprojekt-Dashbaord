@@ -20,6 +20,8 @@ import * as d3 from "d3";
 import { useChartZoom } from "@/hooks/useChartZoom";
 import { translations } from "@/lib/i18n";
 import { useLanguage } from "@/hooks/useLanguage";
+import { useAnimationsEnabled } from "@/hooks/useAnimation";
+import { useAutoLoadChart } from "@/hooks/useAutoLoadChart";
 
 export default function PackageDistributionChart({
   data,
@@ -40,18 +42,19 @@ export default function PackageDistributionChart({
   const chartZoom = useChartZoom();
   const axisColor = theme === "dark" ? "#D1D5DB" : "#111827";
   const { language } = useLanguage();
+  const useAnimation = useAnimationsEnabled();
   const PAGE_SIZE = 10;
   const start = page * PAGE_SIZE;
   const end = start + PAGE_SIZE;
+  const [visible, setVisible] = useState(false);
+  const autoLoad = useAutoLoadChart();
 
-  // 🔹 Gruppiere Elemente nach Package
   const packageCounts: Record<string, number> = {};
   (data?.elements ?? []).forEach((el: any) => {
     const pkg = el.package || "Unbekannt";
     packageCounts[pkg] = (packageCounts[pkg] ?? 0) + 1;
   });
 
-  // 🔹 Daten für Recharts vorbereiten
   const chartData = Object.entries(packageCounts)
     .map(([pkg, count]) => ({ package: pkg, count }))
     .sort((a, b) => b.count - a.count);
@@ -65,7 +68,7 @@ export default function PackageDistributionChart({
 
     const zoom = d3
       .zoom<SVGSVGElement, unknown>()
-      .scaleExtent([0.5, 3]) // Zoom-Level zwischen 0.5x und 3x
+      .scaleExtent([0.5, 3])
       .on("zoom", (event) => {
         setTransform(event.transform);
       });
@@ -73,16 +76,47 @@ export default function PackageDistributionChart({
     svg.call(zoom as any);
 
     return () => {
-      svg.on(".zoom", null); // Cleanup bei Unmount
+      svg.on(".zoom", null);
     };
   }, [chartZoom]);
   const pagedData = hasPagination ? chartData.slice(start, end) : chartData;
 
   const total = chartData.length;
   const totalPagesValue = totalPages ?? Math.ceil(total / PAGE_SIZE);
+  const hasData = chartData.length > 0;
+  if (!hasData) {
+    return (
+      <section className="bg-white flex-col dark:bg-gray-800 items-center flex justify-center rounded-2xl h-[575px] shadow-sm p-6 text-center text-gray-500 dark:text-gray-400">
+        <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100 flex items-center gap-2">
+          {translations[language].packageDistribution}
+        </h2>
+        {translations[language].noData}
+      </section>
+    );
+  }
+  useEffect(() => {
+    setVisible(autoLoad);
+  }, [autoLoad]);
+
+  if (!visible) {
+    return (
+      <div className="p-8 text-center dark:bg-gray-800 bg-white rounded-2xl  h-[575px] items-center flex justify-center flex-col shadow-sm">
+        <p className="text-gray-600 dark:text-gray-200 mb-4">
+          {translations[language].loadChart}
+        </p>
+        <button
+          className="px-4 py-2 rounded-lg text-white"
+          style={{ backgroundColor: accentColor }}
+          onClick={() => setVisible(true)}
+        >
+          {translations[language].loadNow}{" "}
+        </button>
+      </div>
+    );
+  }
+
   return (
     <section className="rounded-2xl dark:bg-gray-800 bg-white p-6 shadow-sm relative">
-      {/* 🔹 Titel */}
       <div className="flex justify-between mb-4 items-center">
         <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100 flex items-center gap-2">
           <Package className="h-5 w-5" style={{ color: accentColor }} />
@@ -129,7 +163,6 @@ export default function PackageDistributionChart({
           <g transform={transform.toString()}>
             <foreignObject width="100%" height="100%">
               <div style={{ width: "100%", height: "100%" }}>
-                {/* 🔹 Diagramm */}
                 <ResponsiveContainer width="100%" height={400}>
                   <BarChart
                     data={pagedData}
@@ -201,7 +234,7 @@ export default function PackageDistributionChart({
                       dataKey="count"
                       fill={accentColor}
                       radius={[6, 6, 0, 0]}
-                      isAnimationActive={true}
+                      isAnimationActive={useAnimation}
                     />
                   </BarChart>
                 </ResponsiveContainer>
@@ -212,7 +245,6 @@ export default function PackageDistributionChart({
       </div>
 
       <div className="flex flex-row justify-between items-center mt-2">
-        {/* 🔹 Legende */}
         <p className="text-xs text-gray-500 mt-2 dark:text-gray-300">
           {translations[language].packageDistributionLegend}
         </p>

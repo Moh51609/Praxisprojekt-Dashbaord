@@ -73,7 +73,7 @@ export default function DetailPanel({ item, onClose }: any) {
 
 function ElementDetails({ item }: any) {
   return (
-    <div className="space-y-10">
+    <div className="space-y-10 justify-between flex flex-col">
       {/* Allgemein */}
       <section>
         <h3 className="text-lg font-semibold mb-2">Allgemein</h3>
@@ -81,7 +81,6 @@ function ElementDetails({ item }: any) {
           <BulletInfo label="Name" value={item.name} />
           <BulletInfo label="Typ" value={item.type?.replace("uml:", "")} />
           <BulletInfo label="Package" value={item.package ?? "—"} />
-          <BulletInfo label="Stereotyp" value={item.stereotype ?? "—"} />
           <BulletInfo label="ID" value={item.id ?? "—"} />
         </ul>
       </section>
@@ -124,39 +123,6 @@ function ElementDetails({ item }: any) {
         ) : (
           <p className="text-gray-500 text-sm">Keine Ports vorhanden</p>
         )}
-      </section>
-
-      {/* Beziehungen */}
-      <section>
-        <h3 className="text-lg font-semibold mb-2">Beziehungen</h3>
-        <ul className="space-y-1 pl-3 border-l border-gray-700">
-          <BulletInfo label="Eingehend" value={item.incoming?.length ?? 0} />
-          <BulletInfo label="Ausgehend" value={item.outgoing?.length ?? 0} />
-        </ul>
-      </section>
-
-      {/* Diagramme */}
-      <section>
-        <h3 className="text-lg font-semibold mb-2">Diagramme</h3>
-        {item.diagrams?.length ? (
-          <ul className="space-y-1 pl-3 border-l border-gray-700">
-            {item.diagrams.map((d: any, i: number) => (
-              <BulletInfo key={i} label={d.name} value={d.type} />
-            ))}
-          </ul>
-        ) : (
-          <p className="text-gray-500 text-sm">Nicht in Diagrammen</p>
-        )}
-      </section>
-
-      {/* Qualität */}
-      <section>
-        <h3 className="text-lg font-semibold mb-2">Qualitätsanalyse</h3>
-        <ul className="space-y-1 pl-3 border-l border-gray-700">
-          <BulletInfo label="Smells" value={item.smells?.length ?? 0} />
-          <BulletInfo label="Warnings" value={item.warnings?.length ?? 0} />
-          <BulletInfo label="Verstöße" value={item.violations?.length ?? 0} />
-        </ul>
       </section>
 
       <section>

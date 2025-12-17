@@ -20,6 +20,8 @@ import { useChartZoom } from "@/hooks/useChartZoom";
 import * as d3 from "d3";
 import { translations } from "@/lib/i18n";
 import { useLanguage } from "@/hooks/useLanguage";
+import { useAnimationsEnabled } from "@/hooks/useAnimation";
+import { useAutoLoadChart } from "@/hooks/useAutoLoadChart";
 
 export default function SmellSeverityTrendChart({ data }: { data: any[] }) {
   const accent = useAccentColor();
@@ -32,13 +34,12 @@ export default function SmellSeverityTrendChart({ data }: { data: any[] }) {
   const [transform, setTransform] = useState(d3.zoomIdentity);
   const chartZoom = useChartZoom();
   const { language } = useLanguage();
+  const useAnimation = useAnimationsEnabled();
 
-  // 🔹 Smell-Daten zählen nach Schweregrad
   const low = data.filter((s) => s.severity === "Low").length;
   const med = data.filter((s) => s.severity === "Medium").length;
   const high = data.filter((s) => s.severity === "High").length;
 
-  // 🔹 Beispielhafte Zeitpunkte – später kannst du hier echte Verlaufsmessungen einfügen
   const smellTrend = [
     { date: "01.10", low: low * 1.2, med: med * 1.3, high: high * 1.1 },
     { date: "05.10", low: low, med: med * 0.9, high: high },
@@ -53,18 +54,41 @@ export default function SmellSeverityTrendChart({ data }: { data: any[] }) {
     const svg = d3.select(zoomRef.current);
 
     const zoom = d3
-      .zoom<SVGSVGElement, unknown>() // ✅ richtige Typen
-      .scaleExtent([0.5, 3]) // ✅ Zoom-Level
+      .zoom<SVGSVGElement, unknown>()
+      .scaleExtent([0.5, 3])
       .on("zoom", (event: any) => {
         setTransform(event.transform);
       });
 
-    svg.call(zoom as any); // ✅ “as any” killt TS-Fehler, aber D3 bleibt funktionsfähig
+    svg.call(zoom as any);
 
     return () => {
-      svg.on(".zoom", null); // Cleanup
+      svg.on(".zoom", null);
     };
   }, [chartZoom]);
+
+  const [visible, setVisible] = useState(false);
+  const autoLoad = useAutoLoadChart();
+  useEffect(() => {
+    setVisible(autoLoad);
+  }, [autoLoad]);
+
+  if (!visible) {
+    return (
+      <div className="p-8 text-center dark:bg-gray-800 bg-white rounded-2xl  h-[400px] items-center flex justify-center flex-col shadow-sm">
+        <p className="text-gray-600 dark:text-gray-200 mb-4">
+          {translations[language].loadChart}
+        </p>
+        <button
+          className="px-4 py-2 rounded-lg text-white"
+          style={{ backgroundColor: accent }}
+          onClick={() => setVisible(true)}
+        >
+          {translations[language].loadNow}{" "}
+        </button>
+      </div>
+    );
+  }
 
   return (
     <section className="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm">
@@ -76,7 +100,6 @@ export default function SmellSeverityTrendChart({ data }: { data: any[] }) {
       </div>
 
       <div className="relative rounded-2xl dark:bg-gray-800 bg-gray-50 p-4">
-        {/* Hintergrund-Gitter */}
         <div
           className="absolute inset-0 rounded-2xl pointer-events-none transition-colors duration-300"
           style={{
@@ -166,9 +189,9 @@ export default function SmellSeverityTrendChart({ data }: { data: any[] }) {
                       }}
                     />
 
-                    {/* 🔸 Drei Linien */}
                     <Line
                       type="monotone"
+                      isAnimationActive={useAnimation}
                       dataKey="low"
                       stroke="#22c55e" // grün
                       strokeWidth={2.3}
@@ -178,6 +201,7 @@ export default function SmellSeverityTrendChart({ data }: { data: any[] }) {
                     <Line
                       type="monotone"
                       dataKey="med"
+                      isAnimationActive={useAnimation}
                       stroke="#eab308" // gelb
                       strokeWidth={2.3}
                       dot={{ r: 3 }}
@@ -186,6 +210,7 @@ export default function SmellSeverityTrendChart({ data }: { data: any[] }) {
                     <Line
                       type="monotone"
                       dataKey="high"
+                      isAnimationActive={useAnimation}
                       stroke="#ef4444" // rot
                       strokeWidth={2.3}
                       dot={{ r: 3 }}
@@ -201,8 +226,7 @@ export default function SmellSeverityTrendChart({ data }: { data: any[] }) {
       </div>
 
       <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 text-center">
-        Zeigt die Entwicklung der Model-Smells über die Zeit getrennt nach
-        Schweregrad (Low, Medium, High).
+        {translations[language].smellTrendLegend}
       </p>
     </section>
   );

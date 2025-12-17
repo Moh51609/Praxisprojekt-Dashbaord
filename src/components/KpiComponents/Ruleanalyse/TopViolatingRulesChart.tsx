@@ -40,12 +40,12 @@ export default function TopViolatingRulesChart({ rules }: { rules: any[] }) {
   const [transform, setTransform] = useState(d3.zoomIdentity);
   const autoLoad = useAutoLoadChart();
   const [visible, setVisible] = useState(true);
+  const useAnimation = useAnimationsEnabled();
 
   useEffect(() => {
     setVisible(autoLoad);
   }, [autoLoad]);
 
-  // 🔹 Daten sortieren nach Anzahl Verstöße
   const sorted = [...rules].sort((a, b) => b.violations - a.violations);
   const totalViolations = sorted.reduce((sum, r) => sum + r.violations, 0);
   let cumulative = 0;
@@ -59,7 +59,6 @@ export default function TopViolatingRulesChart({ rules }: { rules: any[] }) {
     };
   });
 
-  // 🔹 Zoom Setup
   useEffect(() => {
     if (!svgRef.current || !chartZoom) return;
 
@@ -75,9 +74,42 @@ export default function TopViolatingRulesChart({ rules }: { rules: any[] }) {
     };
   }, [chartZoom]);
 
+  const hasData = sorted.length > 0 && totalViolations > 0;
+
+  if (!hasData) {
+    return (
+      <section className="bg-white dark:bg-gray-800 h-[400px]  items-center flex justify-center flex-col rounded-2xl shadow-sm p-6 text-center text-gray-500 dark:text-gray-400">
+        <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100 flex items-center gap-2">
+          {translations[language].modelDepth}
+        </h2>
+        {translations[language].noData}
+      </section>
+    );
+  }
+
+  useEffect(() => {
+    setVisible(autoLoad);
+  }, [autoLoad]);
+
+  if (!visible) {
+    return (
+      <div className="p-8 text-center dark:bg-gray-800 bg-white rounded-2xl  h-[330px] items-center flex justify-center flex-col shadow-sm">
+        <p className="text-gray-600 dark:text-gray-200 mb-4">
+          {translations[language].loadChart}
+        </p>
+        <button
+          className="px-4 py-2 rounded-lg text-white"
+          style={{ backgroundColor: accentColor }}
+          onClick={() => setVisible(true)}
+        >
+          {translations[language].loadNow}{" "}
+        </button>
+      </div>
+    );
+  }
+
   return (
     <section className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-6 relative">
-      {/* Titel */}
       <div className="flex flex-row justify-between mb-4">
         <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100 flex items-center gap-2">
           <TrendingUp className="h-5 w-5" style={{ color: accentColor }} />
@@ -85,9 +117,7 @@ export default function TopViolatingRulesChart({ rules }: { rules: any[] }) {
         </h2>
       </div>
 
-      {/* Chart-Bereich */}
       <div className="relative rounded-2xl dark:bg-gray-800 bg-gray-50 p-4">
-        {/* Hintergrund-Gitter */}
         <div
           className="absolute inset-0 rounded-2xl pointer-events-none transition-colors duration-300"
           style={{
@@ -127,7 +157,6 @@ export default function TopViolatingRulesChart({ rules }: { rules: any[] }) {
           }}
         />
 
-        {/* SVG + Chart */}
         <svg ref={svgRef} width="100%" height="200">
           <g transform={transform.toString()}>
             <foreignObject width="100%" height="100%">
@@ -193,24 +222,24 @@ export default function TopViolatingRulesChart({ rules }: { rules: any[] }) {
                     />
                     <Legend />
 
-                    {/* Balken = Verstöße */}
                     <Bar
                       yAxisId="left"
                       dataKey="violations"
                       radius={[6, 6, 0, 0]}
+                      isAnimationActive={useAnimation}
                     >
                       {data.map((d, i) => (
                         <Cell key={i} fill={accentColor} />
                       ))}
                     </Bar>
 
-                    {/* Linie = kumulative % */}
                     <Line
                       yAxisId="right"
                       type="monotone"
                       dataKey="cumulative"
                       stroke="#f59e0b"
                       strokeWidth={2.5}
+                      isAnimationActive={useAnimation}
                       dot={{ fill: "#f59e0b", r: 3 }}
                     />
                   </ComposedChart>

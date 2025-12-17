@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useAccentColor } from "@/hooks/useAccentColor";
 import { useLanguage } from "@/hooks/useLanguage";
 import { translations } from "@/lib/i18n";
@@ -23,6 +23,7 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
+import { useAutoLoadChart } from "@/hooks/useAutoLoadChart";
 
 interface ViolationEntry {
   id: string;
@@ -36,15 +37,10 @@ export default function RuleViolationTable({ rules }: { rules: any[] }) {
   const accentColor = useAccentColor();
   const { language } = useLanguage();
   const [selectedRule, setSelectedRule] = useState("all");
-
-  // 🔹 Pagination
+  const [visible, setVisible] = useState(false);
+  const autoLoad = useAutoLoadChart();
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 11;
-
-  /**
-   * 🔹 ALLE Verstöße kommen AUSSCHLIESSLICH aus modelRules.ts
-   * 🔹 KEINE eigene Regel-Logik mehr
-   */
 
   const allViolations: ViolationEntry[] = useMemo(() => {
     if (!Array.isArray(rules)) return [];
@@ -90,9 +86,29 @@ export default function RuleViolationTable({ rules }: { rules: any[] }) {
   const handlePrev = () => setCurrentPage((p) => Math.max(p - 1, 1));
   const handleNext = () => setCurrentPage((p) => Math.min(p + 1, totalPages));
 
+  useEffect(() => {
+    setVisible(autoLoad);
+  }, [autoLoad]);
+
+  if (!visible) {
+    return (
+      <div className="p-8 text-center dark:bg-gray-800 bg-white rounded-2xl  h-[650px] items-center flex justify-center flex-col shadow-sm">
+        <p className="text-gray-600 dark:text-gray-200 mb-4">
+          {translations[language].loadChart}
+        </p>
+        <button
+          className="px-4 py-2 rounded-lg text-white"
+          style={{ backgroundColor: accentColor }}
+          onClick={() => setVisible(true)}
+        >
+          {translations[language].loadNow}{" "}
+        </button>
+      </div>
+    );
+  }
+
   return (
     <section className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-6">
-      {/* Header */}
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-lg font-semibold flex items-center gap-2 text-gray-800 dark:text-gray-100">
           <Layers className="h-5 w-5" style={{ color: accentColor }} />
@@ -125,7 +141,6 @@ export default function RuleViolationTable({ rules }: { rules: any[] }) {
         </div>
       </div>
 
-      {/* Tabelle */}
       <div className="overflow-x-auto">
         <Table>
           <TableHeader>
@@ -185,7 +200,7 @@ export default function RuleViolationTable({ rules }: { rules: any[] }) {
                   colSpan={5}
                   className="text-center py-6 text-gray-500 dark:text-gray-300"
                 >
-                  Keine Regelverstöße gefunden.
+                  {translations[language].noRuleBreak}
                 </TableCell>
               </TableRow>
             )}

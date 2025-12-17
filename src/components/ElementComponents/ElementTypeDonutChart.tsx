@@ -13,17 +13,22 @@ import { useAccentColor } from "@/hooks/useAccentColor";
 import { useTheme } from "next-themes";
 import { useLanguage } from "@/hooks/useLanguage";
 import { translations } from "@/lib/i18n";
+import { useAnimationsEnabled } from "@/hooks/useAnimation";
+import { useAutoLoadChart } from "@/hooks/useAutoLoadChart";
+import { useEffect, useState } from "react";
 
 export default function ElementTypeDonutChart({
   typeCounts,
 }: {
   typeCounts: Record<string, number>;
 }) {
+  const useAnimation = useAnimationsEnabled();
   const accent = useAccentColor();
   const { theme } = useTheme();
   const { language } = useLanguage();
+  const autoLoad = useAutoLoadChart();
+  const [visible, setVisible] = useState(true);
 
-  // 🎯 Erlaubte Typen
   const ALLOWED = [
     "Class",
     "Port",
@@ -34,7 +39,6 @@ export default function ElementTypeDonutChart({
     "Activity",
   ];
 
-  // 🎯 Mapping für Labels
   const LABELS: Record<string, string> = {
     Class: "Blöcke",
     Port: "Ports",
@@ -56,7 +60,26 @@ export default function ElementTypeDonutChart({
     Activity: "#6366f1",
   };
 
-  // 🎯 Daten aufbereiten
+  useEffect(() => {
+    setVisible(autoLoad);
+  }, [autoLoad]);
+
+  if (!visible) {
+    return (
+      <div className="flex flex-col   flex-1 h-[370px] items-center justify-center  dark:bg-gray-800 bg-white rounded-2xl shadow-sm">
+        <p className="text-gray-600 dark:text-gray-200 mb-4 text-center">
+          {translations[language].loadChart}
+        </p>
+        <button
+          className="px-4 py-2 rounded-lg text-white"
+          style={{ backgroundColor: accent }}
+          onClick={() => setVisible(true)}
+        >
+          {translations[language].loadNow}
+        </button>
+      </div>
+    );
+  }
   const chartData = ALLOWED.map((t) => {
     const clean = t;
     const label = LABELS[clean];
@@ -67,8 +90,8 @@ export default function ElementTypeDonutChart({
 
   if (!chartData.length) {
     return (
-      <section className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-6 text-center text-gray-500 dark:text-gray-400">
-        Keine Elementtypen gefunden.
+      <section className="bg-white dark:bg-gray-800 flex justify-center items-center rounded-2xl shadow-sm p-6 text-center text-gray-500 dark:text-gray-400">
+        {translations[language].noData}
       </section>
     );
   }
@@ -94,6 +117,7 @@ export default function ElementTypeDonutChart({
               innerRadius={50}
               outerRadius={85}
               paddingAngle={3}
+              isAnimationActive={useAnimation}
             >
               {chartData.map((entry, i) => (
                 <Cell key={i} fill={COLORS_MAP[entry.name] ?? "#8884d8"} />

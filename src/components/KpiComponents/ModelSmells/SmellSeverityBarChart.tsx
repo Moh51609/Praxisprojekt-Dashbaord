@@ -20,6 +20,8 @@ import * as d3 from "d3";
 import { useChartTooltipStyle } from "@/hooks/useChartTooltipStyle";
 import { translations } from "@/lib/i18n";
 import { useLanguage } from "@/hooks/useLanguage";
+import { useAnimationsEnabled } from "@/hooks/useAnimation";
+import { useAutoLoadChart } from "@/hooks/useAutoLoadChart";
 
 export default function SmellSeverityBarChart({ smells }: { smells: any[] }) {
   const accent = useAccentColor();
@@ -30,6 +32,7 @@ export default function SmellSeverityBarChart({ smells }: { smells: any[] }) {
   const zoomRef = useRef<SVGSVGElement | null>(null);
   const [transform, setTransform] = useState(d3.zoomIdentity);
   const chartZoom = useChartZoom();
+  const useAnimaiton = useAnimationsEnabled();
   const { language } = useLanguage();
 
   // 🔹 Gruppiere Smells nach Severity
@@ -52,39 +55,71 @@ export default function SmellSeverityBarChart({ smells }: { smells: any[] }) {
     const svg = d3.select(zoomRef.current);
 
     const zoom = d3
-      .zoom<SVGSVGElement, unknown>() // ✅ richtige Typen
-      .scaleExtent([0.5, 3]) // ✅ Zoom-Level
+      .zoom<SVGSVGElement, unknown>()
+      .scaleExtent([0.5, 3])
       .on("zoom", (event: any) => {
         setTransform(event.transform);
       });
 
-    svg.call(zoom as any); // ✅ “as any” killt TS-Fehler, aber D3 bleibt funktionsfähig
+    svg.call(zoom as any);
 
     return () => {
-      svg.on(".zoom", null); // Cleanup
+      svg.on(".zoom", null);
     };
   }, [chartZoom]);
-  // 🔹 Farben für Balken
   const COLORS: Record<string, string> = {
-    Low: "#22c55e", // grün
-    Medium: "#facc15", // gelb
-    High: "#ef4444", // rot
+    Low: "#22c55e",
+    Medium: "#facc15",
+    High: "#ef4444",
   };
 
   const axisColor = theme === "dark" ? "#D1D5DB" : "#111827";
   const gridColor = theme === "dark" ? "#374151" : "#e5e7eb";
 
+  const hasData = data.some((d) => d.count > 0);
+
+  if (!hasData) {
+    return (
+      <section className="bg-white dark:bg-gray-800 h-[400px]  items-center flex justify-center flex-col rounded-2xl shadow-sm p-6 text-center text-gray-500 dark:text-gray-400">
+        <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100 flex items-center gap-2">
+          {translations[language].smellsBySeverity}
+        </h2>
+        {translations[language].noData}
+      </section>
+    );
+  }
+
+  const [visible, setVisible] = useState(false);
+  const autoLoad = useAutoLoadChart();
+  useEffect(() => {
+    setVisible(autoLoad);
+  }, [autoLoad]);
+
+  if (!visible) {
+    return (
+      <div className="p-8 text-center dark:bg-gray-800 bg-white rounded-2xl  h-[350px] items-center flex justify-center flex-col shadow-sm">
+        <p className="text-gray-600 dark:text-gray-200 mb-4">
+          {translations[language].loadChart}
+        </p>
+        <button
+          className="px-4 py-2 rounded-lg text-white"
+          style={{ backgroundColor: accent }}
+          onClick={() => setVisible(true)}
+        >
+          {translations[language].loadNow}{" "}
+        </button>
+      </div>
+    );
+  }
+
   return (
     <section className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-6 flex flex-col justify-between">
-      {/* 🔹 Titel */}
       <h2 className="text-md font-semibold mb-4 text-gray-800 dark:text-gray-100 flex items-center gap-2">
         <ThermometerSun className="h-5 w-5" style={{ color: accent }} />
         {translations[language].smellsBySeverity}
       </h2>
 
-      {/* 🔹 Chart */}
       <div className="relative rounded-2xl dark:bg-gray-800 bg-gray-50 p-4">
-        {/* Hintergrund-Gitter */}
         <div
           className="absolute inset-0 rounded-2xl pointer-events-none transition-colors duration-300"
           style={{
@@ -157,7 +192,11 @@ export default function SmellSeverityBarChart({ smells }: { smells: any[] }) {
                           );
                         }}
                       />
-                      <Bar dataKey="count" radius={[6, 6, 0, 0]}>
+                      <Bar
+                        dataKey="count"
+                        radius={[6, 6, 0, 0]}
+                        isAnimationActive={useAnimaiton}
+                      >
                         {data.map((entry, index) => (
                           <Cell
                             key={`cell-${index}`}

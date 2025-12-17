@@ -49,8 +49,7 @@ export default function PortComplexityChart({
   const chartBackground = useChartBackground();
   const { language } = useLanguage();
   const tooltipStyle = useChartTooltipStyle();
-  const PAGE_SIZE = 10; // Anzahl pro Seite
-  // === Daten vorbereiten ===
+  const PAGE_SIZE = 10;
   const topBlocksRaw = data?.classStats ?? [];
   const animationEnabled = useAnimationsEnabled();
   const chartZoom = useChartZoom();
@@ -59,15 +58,10 @@ export default function PortComplexityChart({
   const autoLoad = useAutoLoadChart();
   const [visible, setVisible] = useState(true);
 
-  useEffect(() => {
-    setVisible(autoLoad);
-  }, [autoLoad]);
-
   if (!topBlocksRaw.length) {
     console.warn("⚠️ Keine classStats gefunden, verwende Fallback-Daten!");
   }
 
-  // Nur Klassen mit Ports > 0
   const topBlocks = topBlocksRaw
     .filter((c) => {
       const element = data.elements.find((e) => e.id === c.umlId);
@@ -76,13 +70,13 @@ export default function PortComplexityChart({
     .map((c) => {
       const element = data.elements.find((e) => e.id === c.umlId);
       return {
-        id: c.umlId, // 🟢 Eindeutiger Identifier
+        id: c.umlId,
         className:
           c.className!.length > 12
             ? c.className!.slice(0, 10) + "…"
             : c.className,
         portCount: element?.ports?.length ?? 0,
-        fullName: c.className, // für Tooltip
+        fullName: c.className,
       };
     });
 
@@ -93,7 +87,7 @@ export default function PortComplexityChart({
 
     const zoom = d3
       .zoom<SVGSVGElement, unknown>()
-      .scaleExtent([0.5, 3]) // Zoom-Level zwischen 0.5x und 3x
+      .scaleExtent([0.5, 3])
       .on("zoom", (event) => {
         setTransform(event.transform);
       });
@@ -101,42 +95,54 @@ export default function PortComplexityChart({
     svg.call(zoom as any);
 
     return () => {
-      svg.on(".zoom", null); // Cleanup bei Unmount
+      svg.on(".zoom", null);
     };
   }, [chartZoom]);
 
-  // === Seite ausschneiden ===
   const start = page * PAGE_SIZE;
   const end = start + PAGE_SIZE;
   const topBlocksSlice = topBlocks.slice(start, end);
 
-  // Fallback falls leer (damit Recharts nicht „verschwimmt“)
   const chartData =
     topBlocksSlice.length > 0 ? topBlocksSlice : topBlocks.slice(0, 10);
 
   const totalPages = Math.max(1, Math.ceil(topBlocks.length / PAGE_SIZE));
+  const hasData = topBlocks.length > 0;
+  useEffect(() => {
+    setVisible(autoLoad);
+  }, [autoLoad]);
 
   if (!visible) {
     return (
-      <div className="flex flex-col items-center justify-center dark:bg-gray-800 bg-white rounded-2xl shadow-sm">
-        <p className="text-gray-600 dark:text-gray-200 mb-4 text-center">
-          {translations[language].loadChart}{" "}
+      <div className="p-8 text-center dark:bg-gray-800 bg-white rounded-2xl  h-[575px] items-center flex justify-center flex-col shadow-sm">
+        <p className="text-gray-600 dark:text-gray-200 mb-4">
+          {translations[language].loadChart}
         </p>
         <button
           className="px-4 py-2 rounded-lg text-white"
           style={{ backgroundColor: accessColor }}
           onClick={() => setVisible(true)}
         >
-          {translations[language].loadNow}
+          {translations[language].loadNow}{" "}
         </button>
       </div>
+    );
+  }
+
+  if (!hasData) {
+    return (
+      <section className="bg-white flex-col dark:bg-gray-800 h-[575px]  items-center flex justify-center rounded-2xl shadow-sm p-6 text-center text-gray-500 dark:text-gray-400">
+        <h2 className="text-lg  font-semibold text-gray-800 dark:text-gray-100 flex items-center gap-2">
+          {translations[language].portComplexity}
+        </h2>
+        {translations[language].noData}
+      </section>
     );
   }
 
   return (
     <section>
       <div className="relative bg-white rounded-2xl dark:bg-gray-800 p-6 shadow-sm">
-        {/* 🔹 Titel-Header (außerhalb des karierten Bereichs) */}
         <div className="flex justify-between mb-4 items-center">
           <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100 flex items-center gap-2">
             <ChartColumnDecreasing
@@ -264,12 +270,10 @@ export default function PortComplexityChart({
                         strokeWidth={1.2}
                       />
 
-                      {/* Balken */}
-
                       <Bar
                         dataKey="portCount"
                         isAnimationActive={animationEnabled}
-                        fill={accessColor} // 🟣 Gleiche Farbe wie obere Linie
+                        fill={accessColor}
                         radius={[6, 6, 0, 0]}
                       />
                     </BarChart>
@@ -280,7 +284,6 @@ export default function PortComplexityChart({
           </svg>
         </div>
 
-        {/* 🔹 Kleine Legende */}
         <div className="flex flex-row justify-between items-center mt-2">
           <p className="text-xs text-gray-500 dark:text-white">
             {translations[language].interfaceLegend}

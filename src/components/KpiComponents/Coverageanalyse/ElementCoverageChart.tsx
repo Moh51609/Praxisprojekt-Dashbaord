@@ -19,6 +19,8 @@ import { useChartBackground } from "@/hooks/useChartBackground";
 import { useLanguage } from "@/hooks/useLanguage";
 import { translations } from "@/lib/i18n";
 import { UmlElement } from "@/types/model";
+import { useAnimationsEnabled } from "@/hooks/useAnimation";
+import { useAutoLoadChart } from "@/hooks/useAutoLoadChart";
 
 export default function SystemCoverageRadarChart({
   data,
@@ -34,8 +36,8 @@ export default function SystemCoverageRadarChart({
   const [transform, setTransform] = useState(d3.zoomIdentity);
   const chartZoom = useChartZoom();
   const { language } = useLanguage();
+  const useAnimaton = useAnimationsEnabled();
 
-  /* 🔍 Zoom bleibt */
   useEffect(() => {
     if (!svgRef.current || !chartZoom) return;
 
@@ -55,71 +57,58 @@ export default function SystemCoverageRadarChart({
     relations?.flatMap((r) => [r.source, r.target]) ?? []
   );
 
-  /* =================================================
-     ✅ KORREKTE COVERAGE – angepasst an XML + ParsedModel
-     ================================================= */
   const coverage = useMemo(() => {
     if (!data) return [];
 
     const elements = data.elements ?? [];
     const rels = relations ?? [];
 
-    // 🔹 IDs, die irgendwo in Relations vorkommen
     const relatedIds = new Set<string>();
     rels.forEach((r) => {
       if (r.source) relatedIds.add(r.source);
       if (r.target) relatedIds.add(r.target);
     });
 
-    // -----------------------------
-    // 🧩 BLOCKS
-    // -----------------------------
     const blocks = elements.filter(
-      (e) =>
+      (e: UmlElement) =>
         e.type === "uml:Class" &&
         e.package !== "(Diagrams)" &&
         e.package !== "(Unbekannt)"
     );
 
     const connectedBlocks = blocks.filter(
-      (b) =>
+      (b: UmlElement) =>
         elements.some(
-          (child) => child.parentId === b.id && relatedIds.has(child.id)
+          (child: UmlElement) =>
+            child.parentId === b.id && relatedIds.has(child.id)
         ) || relatedIds.has(b.id)
     );
 
-    // -----------------------------
-    // 📦 REQUIREMENTS
-    // -----------------------------
-    const requirements = elements.filter((e) =>
+    const requirements = elements.filter((e: UmlElement) =>
       e.type?.toLowerCase().includes("requirement")
     );
 
-    const connectedRequirements = requirements.filter((r) =>
+    const connectedRequirements = requirements.filter((r: UmlElement) =>
       relatedIds.has(r.id)
     );
 
-    // -----------------------------
-    // 🔌 PORTS
-    // -----------------------------
-    const ports = elements.filter((e) => e.type === "uml:Port");
+    const ports = elements.filter((e: UmlElement) => e.type === "uml:Port");
 
     const connectedPorts = ports.filter(
-      (p) => relatedIds.has(p.id) || (p.parentId && relatedIds.has(p.parentId))
+      (p: UmlElement) =>
+        relatedIds.has(p.id) || (p.parentId && relatedIds.has(p.parentId))
     );
 
-    // -----------------------------
-    // 🔗 ASSOCIATIONS (nicht Connector!)
-    // -----------------------------
     const associations = data.metrics.associations;
 
-    // -----------------------------
-    // 📁 PACKAGES
-    // -----------------------------
-    const packages = elements.filter((e) => e.type === "uml:Package");
+    const packages = elements.filter(
+      (e: UmlElement) => e.type === "uml:Package"
+    );
 
-    const nonEmptyPackages = packages.filter((p) =>
-      elements.some((e) => e.package === p.name && e.type !== "uml:Package")
+    const nonEmptyPackages = packages.filter((p: UmlElement) =>
+      elements.some(
+        (e: UmlElement) => e.package === p.name && e.type !== "uml:Package"
+      )
     );
 
     return [
@@ -157,6 +146,43 @@ export default function SystemCoverageRadarChart({
     ];
   }, [data, relations]);
 
+  const hasData = coverage.some((c) => c.abdeckung > 0);
+
+  if (!hasData) {
+    return (
+      <section className="bg-white flex-col dark:bg-gray-800 items-center flex justify-center rounded-2xl h-[465px]  shadow-sm p-6 text-center text-gray-500 dark:text-gray-400">
+        <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100 flex items-center gap-2">
+          {translations[language].systemicCoverage}
+        </h2>
+
+        {translations[language].noData}
+      </section>
+    );
+  }
+
+  const [visible, setVisible] = useState(false);
+  const autoLoad = useAutoLoadChart();
+  useEffect(() => {
+    setVisible(autoLoad);
+  }, [autoLoad]);
+
+  if (!visible) {
+    return (
+      <div className="p-8 text-center dark:bg-gray-800 bg-white rounded-2xl  h-[425px] items-center flex justify-center flex-col shadow-sm">
+        <p className="text-gray-600 dark:text-gray-200 mb-4">
+          {translations[language].loadChart}
+        </p>
+        <button
+          className="px-4 py-2 rounded-lg text-white"
+          style={{ backgroundColor: accent }}
+          onClick={() => setVisible(true)}
+        >
+          {translations[language].loadNow}{" "}
+        </button>
+      </div>
+    );
+  }
+
   return (
     <section className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-6">
       <h2 className="text-md font-semibold mb-4 text-gray-800 dark:text-gray-100 flex items-center gap-2">
@@ -165,7 +191,6 @@ export default function SystemCoverageRadarChart({
       </h2>
 
       <div className="relative rounded-2xl p-4">
-        {/* ✅ ChartBackground bleibt */}
         <div
           className="absolute inset-0 rounded-2xl pointer-events-none transition-colors duration-300"
           style={{
@@ -238,6 +263,7 @@ export default function SystemCoverageRadarChart({
                     stroke={accent}
                     fill={accent}
                     fillOpacity={0.45}
+                    isAnimationActive={useAnimaton}
                   />
                 </RadarChart>
               </ResponsiveContainer>

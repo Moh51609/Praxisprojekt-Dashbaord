@@ -1,54 +1,55 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import TreeNode from "./TreeNode";
 import DetailPanel from "../Search/DetailPanel";
+import { useModel } from "@/context/ModelContext";
+import { buildTreeFromModel } from "@/lib/treeBuilder";
 
-export default function TreeOverlay({ tree }: any) {
+interface TreeNodeData {
+  id: string;
+  label: string;
+  children: TreeNodeData[];
+  original: any;
+}
+
+export default function TreeOverlay() {
+  const { model } = useModel();
   const [visible, setVisible] = useState(false);
-  const [selectedItem, setSelectedItem] = useState(null);
+  const [selectedItem, setSelectedItem] = useState<any>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const tree = useMemo(() => {
+    if (!model) return [];
+    return buildTreeFromModel(model);
+  }, [model]);
 
-  // Öffnen durch Custom Event
   useEffect(() => {
     const toggle = () => setVisible((v) => !v);
     window.addEventListener("toggle-tree", toggle);
     return () => window.removeEventListener("toggle-tree", toggle);
   }, []);
 
+  useEffect(() => {
+    setSelectedItem(null);
+  }, [model]);
+
   if (!visible) return null;
 
   return (
     <>
-      <div
-        className="
-        fixed 
-        top-[340px]
-        w-[380px]
-        max-h-[60vh]
-        overflow-y-auto
-        bg-gray-900/80 backdrop-blur-md
-        rounded-lg shadow-xl p-4
-        z-[9999]
-      "
-      >
+      <div className="fixed top-[340px] w-[380px] max-h-[60vh] overflow-y-auto bg-gray-900/80 backdrop-blur-md rounded-lg p-4 z-[9999]">
         <h2 className="text-md font-semibold mb-2 text-white">
           Hierarchischer Aufbau
         </h2>
 
-        {!tree || tree.length === 0 ? (
-          <p className="text-gray-400">Keine Struktur gefunden.</p>
-        ) : (
-          <div className="space-y-2">
-            {tree.map((root: any) => (
-              <TreeNode
-                key={root.id}
-                node={root}
-                level={0}
-                onSelect={(item: any) => setSelectedItem(item)}
-              />
-            ))}
-          </div>
-        )}
+        {tree.map((root) => (
+          <TreeNode
+            key={root.id}
+            node={root}
+            level={0}
+            onSelect={(n: TreeNodeData) => setSelectedItem(n.original)} // 🔥 echtes Element
+          />
+        ))}
       </div>
 
       {selectedItem && (

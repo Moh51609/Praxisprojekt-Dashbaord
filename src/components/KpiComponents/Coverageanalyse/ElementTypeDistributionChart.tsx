@@ -22,15 +22,22 @@ import { Layers } from "lucide-react";
 import { translations } from "@/lib/i18n";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useModel } from "@/context/ModelContext";
+import { useAnimationsEnabled } from "@/hooks/useAnimation";
+import { useAutoLoadChart } from "@/hooks/useAutoLoadChart";
 
 export default function ElementTypeDistributionChart() {
   const accent = useAccentColor();
   const { theme } = useTheme();
 
   const { language } = useLanguage();
-
+  const useAnimation = useAnimationsEnabled();
   const { model } = useModel();
+  const [visible, setVisible] = useState(false);
+  const autoLoad = useAutoLoadChart();
 
+  useEffect(() => {
+    setVisible(autoLoad);
+  }, [autoLoad]);
   const { packages, typeCountsByPackage } = useMemo(() => {
     if (!model) {
       return { packages: [], typeCountsByPackage: {} };
@@ -63,7 +70,6 @@ export default function ElementTypeDistributionChart() {
     }
   }, [packages, selectedPackage]);
 
-  // 🔹 Typverteilung für das gewählte Package berechnen
   const typeCounts = useMemo(() => {
     const pkgData = typeCountsByPackage[selectedPackage];
     if (!pkgData) return [];
@@ -89,23 +95,50 @@ export default function ElementTypeDistributionChart() {
 
   const axisColor = theme === "dark" ? "#D1D5DB" : "#111827";
 
-  // 🔄 Ladezustände behandeln
-
   function truncatePath(path: string, maxLength = 28) {
     if (path.length <= maxLength) return path;
     return "…" + path.slice(path.length - maxLength);
   }
 
+  const hasData = typeCounts.length > 0;
+
+  if (!hasData) {
+    return (
+      <section className="bg-white flex-col dark:bg-gray-800 items-center flex justify-center rounded-2xl h-[400px]  shadow-sm p-6 text-center text-gray-500 dark:text-gray-400">
+        <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100 flex items-center gap-2">
+          {translations[language].elementTypePerPackage}
+        </h2>
+
+        {translations[language].noData}
+      </section>
+    );
+  }
+
+  if (!visible) {
+    return (
+      <div className="p-8 text-center dark:bg-gray-800 bg-white rounded-2xl  h-[400px] items-center flex justify-center flex-col shadow-sm">
+        <p className="text-gray-600 dark:text-gray-200 mb-4">
+          {translations[language].loadChart}
+        </p>
+        <button
+          className="px-4 py-2 rounded-lg text-white"
+          style={{ backgroundColor: accent }}
+          onClick={() => setVisible(true)}
+        >
+          {translations[language].loadNow}{" "}
+        </button>
+      </div>
+    );
+  }
+
   return (
     <section className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-6 relative">
-      {/* Header */}
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-md font-semibold text-gray-800 dark:text-gray-100 flex items-center gap-2">
           <Layers className="h-5 w-5" style={{ color: accent }} />
           {translations[language].elementTypePerPackage}
         </h2>
 
-        {/* 🔽 Package-Auswahl */}
         <Select value={selectedPackage} onValueChange={setSelectedPackage}>
           <SelectTrigger className="w-[220px]">
             <SelectValue>
@@ -132,9 +165,10 @@ export default function ElementTypeDistributionChart() {
                 data={typeCounts}
                 dataKey="value"
                 nameKey="name"
-                innerRadius={70}
-                outerRadius={100}
+                innerRadius={50}
+                outerRadius={80}
                 paddingAngle={3}
+                isAnimationActive={useAnimation}
               >
                 {typeCounts.map((_, i) => (
                   <Cell

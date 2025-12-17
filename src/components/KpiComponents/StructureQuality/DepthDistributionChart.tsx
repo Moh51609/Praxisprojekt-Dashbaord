@@ -19,6 +19,7 @@ import { LineChart as LineChartIcon } from "lucide-react";
 import { useChartZoom } from "@/hooks/useChartZoom";
 import { translations } from "@/lib/i18n";
 import { useLanguage } from "@/hooks/useLanguage";
+import { useAutoLoadChart } from "@/hooks/useAutoLoadChart";
 
 export default function DepthDistributionDensityChart({ data }: { data: any }) {
   const accentColor = useAccentColor();
@@ -29,8 +30,9 @@ export default function DepthDistributionDensityChart({ data }: { data: any }) {
   const svgRef = useRef<SVGSVGElement | null>(null);
   const [transform, setTransform] = useState(d3.zoomIdentity);
   const { language } = useLanguage();
+  const [visible, setVisible] = useState(false);
+  const autoLoad = useAutoLoadChart();
 
-  // 🔹 Gruppiere Elemente nach Tiefe
   const depthCounts: Record<number, number> = {};
   (data?.elements ?? []).forEach((el: any) => {
     const d = el.depth ?? 0;
@@ -44,7 +46,7 @@ export default function DepthDistributionDensityChart({ data }: { data: any }) {
 
     const zoom = d3
       .zoom<SVGSVGElement, unknown>()
-      .scaleExtent([0.5, 3]) // Zoom-Level zwischen 0.5x und 3x
+      .scaleExtent([0.5, 3])
       .on("zoom", (event) => {
         setTransform(event.transform);
       });
@@ -52,11 +54,10 @@ export default function DepthDistributionDensityChart({ data }: { data: any }) {
     svg.call(zoom as any);
 
     return () => {
-      svg.on(".zoom", null); // Cleanup bei Unmount
+      svg.on(".zoom", null);
     };
   }, [chartZoom]);
 
-  // 🔹 In sortiertes Array umwandeln
   const chartData = Object.entries(depthCounts)
     .map(([depth, count]) => ({
       depth: Number(depth),
@@ -64,14 +65,46 @@ export default function DepthDistributionDensityChart({ data }: { data: any }) {
     }))
     .sort((a, b) => a.depth - b.depth);
 
-  // 🔹 Durchschnitt berechnen
+  const hasData = chartData.length > 0;
+
   const avgDepth =
     chartData.reduce((acc, d) => acc + d.depth * d.count, 0) /
     chartData.reduce((acc, d) => acc + d.count, 0 || 1);
 
+  useEffect(() => {
+    setVisible(autoLoad);
+  }, [autoLoad]);
+
+  if (!visible) {
+    return (
+      <div className="p-8 text-center dark:bg-gray-800 bg-white rounded-2xl  h-[575px] items-center flex justify-center flex-col shadow-sm">
+        <p className="text-gray-600 dark:text-gray-200 mb-4">
+          {translations[language].loadChart}
+        </p>
+        <button
+          className="px-4 py-2 rounded-lg text-white"
+          style={{ backgroundColor: accentColor }}
+          onClick={() => setVisible(true)}
+        >
+          {translations[language].loadNow}{" "}
+        </button>
+      </div>
+    );
+  }
+
+  if (!hasData) {
+    return (
+      <section className="bg-white flex-col dark:bg-gray-800 items-center flex justify-center rounded-2xl shadow-sm p-6 text-center h-[575px]  text-gray-500 dark:text-gray-400">
+        <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100 flex items-center gap-2">
+          {translations[language].depthDistribution}
+        </h2>
+        {translations[language].noData}
+      </section>
+    );
+  }
+
   return (
     <section className="rounded-2xl dark:bg-gray-800 bg-white p-6 shadow-sm relative">
-      {/* 🔹 Titel */}
       <div className="flex justify-between mb-4 items-center">
         <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100 flex items-center gap-2">
           <LineChartIcon className="h-5 w-5" style={{ color: accentColor }} />
@@ -115,7 +148,6 @@ export default function DepthDistributionDensityChart({ data }: { data: any }) {
           }}
         />
 
-        {/* 🔹 Diagramm */}
         <svg ref={svgRef} width="100%" height="400">
           <g transform={transform.toString()}>
             <foreignObject width="100%" height="100%">
@@ -184,7 +216,6 @@ export default function DepthDistributionDensityChart({ data }: { data: any }) {
                       }}
                     />
 
-                    {/* 🔹 Durchschnittliche Tiefe */}
                     <ReferenceLine
                       x={avgDepth}
                       stroke="red"

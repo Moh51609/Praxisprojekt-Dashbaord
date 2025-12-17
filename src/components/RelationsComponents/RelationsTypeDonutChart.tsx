@@ -13,6 +13,9 @@ import { useTheme } from "next-themes";
 import { GitBranch } from "lucide-react";
 import { useLanguage } from "@/hooks/useLanguage";
 import { translations } from "@/lib/i18n";
+import { useAnimationsEnabled } from "@/hooks/useAnimation";
+import { useEffect, useState } from "react";
+import { useAutoLoadChart } from "@/hooks/useAutoLoadChart";
 
 export default function RelationTypeDonutChart({
   relations,
@@ -21,9 +24,11 @@ export default function RelationTypeDonutChart({
 }) {
   const accent = useAccentColor();
   const { theme } = useTheme();
+  const useAnimation = useAnimationsEnabled();
   const { language } = useLanguage();
+  const autoLoad = useAutoLoadChart();
+  const [visible, setVisible] = useState(true);
 
-  // 🔹 Beziehungstypen zählen
   const typeCounts = relations.reduce((acc: Record<string, number>, r) => {
     const type = r.type?.replace(/^uml:|^sysml:/, "") ?? "Unbekannt";
     acc[type] = (acc[type] ?? 0) + 1;
@@ -37,22 +42,42 @@ export default function RelationTypeDonutChart({
 
   const COLORS = [
     accent,
-    "#10b981", // teal
-    "#3b82f6", // blue
-    "#f59e0b", // amber
-    "#ef4444", // red
-    "#8b5cf6", // violet
-    "#14b8a6", // cyan
-    "#84cc16", // lime
+    "#10b981",
+    "#3b82f6",
+    "#f59e0b",
+    "#ef4444",
+    "#8b5cf6",
+    "#14b8a6",
+    "#84cc16",
   ];
 
   const axisColor = theme === "dark" ? "#D1D5DB" : "#111827";
 
   if (!relations.length) {
     return (
-      <section className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-6 text-center text-gray-500 dark:text-gray-400">
-        Keine Beziehungen im Modell gefunden.
+      <section className="bg-white dark:bg-gray-800 items-center flex justify-center rounded-2xl shadow-sm p-6 text-center text-gray-500 dark:text-gray-400">
+        {translations[language].noData}
       </section>
+    );
+  }
+  useEffect(() => {
+    setVisible(autoLoad);
+  }, [autoLoad]);
+
+  if (!visible) {
+    return (
+      <div className="flex flex-col   flex-1 h-[330px] items-center justify-center  dark:bg-gray-800 bg-white rounded-2xl shadow-sm">
+        <p className="text-gray-600 dark:text-gray-200 mb-4 text-center">
+          {translations[language].loadChart}
+        </p>
+        <button
+          className="px-4 py-2 rounded-lg text-white"
+          style={{ backgroundColor: accent }}
+          onClick={() => setVisible(true)}
+        >
+          {translations[language].loadNow}
+        </button>
+      </div>
     );
   }
 
@@ -77,6 +102,7 @@ export default function RelationTypeDonutChart({
               innerRadius={50}
               outerRadius={80}
               paddingAngle={3}
+              isAnimationActive={useAnimation}
             >
               {data.map((_, i) => (
                 <Cell

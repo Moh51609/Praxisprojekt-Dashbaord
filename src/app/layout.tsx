@@ -9,7 +9,7 @@ import { useEffect, useState } from "react";
 import HomeRedirect from "./page";
 import SearchOverlay from "@/components/Search/SearchOverlay";
 import TreeOverlay from "@/components/TreeComponents/TreeOverlay";
-import { ModelProvider } from "@/context/ModelContext";
+import { ModelProvider, useModel } from "@/context/ModelContext";
 import { Menu, X } from "lucide-react";
 
 const montserrat = Montserrat({
@@ -20,14 +20,8 @@ const montserrat = Montserrat({
 export default function RootLayout({ children }: { children: ReactNode }) {
   // 🔹 State für gespeichertes Muster
   const [bgPattern, setBgPattern] = useState<string>("none");
-  const [treeData, setTreeData] = useState([]);
   const [sidebarOpen, setSidebarOpen] = useState(false); // ✅ NEU
-
-  useEffect(() => {
-    fetch("/api/xmi-tree")
-      .then((r) => r.json())
-      .then((json) => setTreeData(json.tree));
-  }, []);
+  const { model } = useModel();
 
   useEffect(() => {
     const accentFromDom = document.documentElement.getAttribute("data-accent");
@@ -121,7 +115,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
                   {children}
                 </main>
                 <SearchOverlay />
-                <TreeOverlay tree={treeData} />
+                <TreeOverlay />
               </div>
 
               {sidebarOpen && (

@@ -19,6 +19,9 @@ import * as d3 from "d3";
 import { useChartZoom } from "@/hooks/useChartZoom";
 import { translations } from "@/lib/i18n";
 import { useLanguage } from "@/hooks/useLanguage";
+import { useAnimation } from "framer-motion";
+import { useAnimationsEnabled } from "@/hooks/useAnimation";
+import { useAutoLoadChart } from "@/hooks/useAutoLoadChart";
 
 export default function RuleTrendChart({
   history = [
@@ -31,6 +34,7 @@ export default function RuleTrendChart({
 }) {
   const accent = useAccentColor();
   const { theme } = useTheme();
+  const useAnimation = useAnimationsEnabled();
   const textColor = theme === "dark" ? "#e5e7eb" : "#1f2937";
   const gridColor = theme === "dark" ? "#374151" : "#e5e7eb";
   const chartBackground = useChartBackground();
@@ -38,6 +42,8 @@ export default function RuleTrendChart({
   const [transform, setTransform] = useState(d3.zoomIdentity);
   const chartZoom = useChartZoom();
   const { language } = useLanguage();
+  const [visible, setVisible] = useState(false);
+  const autoLoad = useAutoLoadChart();
 
   useEffect(() => {
     if (!svgRef.current || !chartZoom) return;
@@ -46,7 +52,7 @@ export default function RuleTrendChart({
 
     const zoom = d3
       .zoom<SVGSVGElement, unknown>()
-      .scaleExtent([0.5, 3]) // Zoom-Level zwischen 0.5x und 3x
+      .scaleExtent([0.5, 3])
       .on("zoom", (event) => {
         setTransform(event.transform);
       });
@@ -54,9 +60,30 @@ export default function RuleTrendChart({
     svg.call(zoom as any);
 
     return () => {
-      svg.on(".zoom", null); // Cleanup bei Unmount
+      svg.on(".zoom", null);
     };
   }, [chartZoom]);
+
+  useEffect(() => {
+    setVisible(autoLoad);
+  }, [autoLoad]);
+
+  if (!visible) {
+    return (
+      <div className="p-8 text-center dark:bg-gray-800 bg-white rounded-2xl  h-[310px] items-center flex justify-center flex-col shadow-sm">
+        <p className="text-gray-600 dark:text-gray-200 mb-4">
+          {translations[language].loadChart}
+        </p>
+        <button
+          className="px-4 py-2 rounded-lg text-white"
+          style={{ backgroundColor: accent }}
+          onClick={() => setVisible(true)}
+        >
+          {translations[language].loadNow}{" "}
+        </button>
+      </div>
+    );
+  }
 
   return (
     <section className="bg-white dark:bg-gray-800 rounded-2xl p-4 shadow-sm">
@@ -68,7 +95,6 @@ export default function RuleTrendChart({
       </div>
 
       <div className="relative rounded-2xl dark:bg-gray-800 bg-gray-50 p-4">
-        {/* Hintergrund-Gitter */}
         <div
           className="absolute inset-0 rounded-2xl pointer-events-none transition-colors duration-300"
           style={{
@@ -144,6 +170,7 @@ export default function RuleTrendChart({
                       strokeWidth={2.5}
                       dot={{ r: 3 }}
                       activeDot={{ r: 5 }}
+                      isAnimationActive={useAnimation}
                     />
                   </LineChart>
                 </ResponsiveContainer>

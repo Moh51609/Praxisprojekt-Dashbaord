@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useAccentColor } from "@/hooks/useAccentColor";
 import {
   Table,
@@ -20,6 +20,8 @@ import {
 } from "@/components/ui/select";
 import { translations } from "@/lib/i18n";
 import { useLanguage } from "@/hooks/useLanguage";
+import { ModelSmell } from "@/lib/modelSmells";
+import { useAutoLoadChart } from "@/hooks/useAutoLoadChart";
 
 interface SmellEntry {
   id: string;
@@ -34,22 +36,19 @@ interface SmellEntry {
 export default function SmellViolationTable({
   smells,
 }: {
-  smells: SmellEntry[];
+  smells: ModelSmell[];
 }) {
   const accentColor = useAccentColor();
   const [selectedCategory, setSelectedCategory] = useState("all");
   const { language } = useLanguage();
-  // 🔹 Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 13;
 
-  // 🔹 Filterung nach Kategorie
   const filteredSmells =
     selectedCategory === "all"
       ? smells
       : smells.filter((s) => s.category === selectedCategory);
 
-  // 🔹 Pagination
   const totalPages = Math.ceil(filteredSmells.length / itemsPerPage);
   const startIdx = (currentPage - 1) * itemsPerPage;
   const currentItems = filteredSmells.slice(startIdx, startIdx + itemsPerPage);
@@ -59,9 +58,31 @@ export default function SmellViolationTable({
 
   const categories = Array.from(new Set(smells.map((s) => s.category)));
 
+  const [visible, setVisible] = useState(false);
+  const autoLoad = useAutoLoadChart();
+  useEffect(() => {
+    setVisible(autoLoad);
+  }, [autoLoad]);
+
+  if (!visible) {
+    return (
+      <div className="p-8 text-center dark:bg-gray-800 bg-white rounded-2xl  h-[725px] items-center flex justify-center flex-col shadow-sm">
+        <p className="text-gray-600 dark:text-gray-200 mb-4">
+          {translations[language].loadChart}
+        </p>
+        <button
+          className="px-4 py-2 rounded-lg text-white"
+          style={{ backgroundColor: accentColor }}
+          onClick={() => setVisible(true)}
+        >
+          {translations[language].loadNow}{" "}
+        </button>
+      </div>
+    );
+  }
+
   return (
     <section className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-6">
-      {/* Header */}
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-lg font-semibold flex items-center gap-2 text-gray-800 dark:text-gray-100">
           <Bug className="h-5 w-5" style={{ color: accentColor }} />
@@ -92,9 +113,7 @@ export default function SmellViolationTable({
         </div>
       </div>
 
-      {/* Tabelle */}
       <div className="flex flex-col h-[620px]">
-        {/* Tabelle selbst: Scrollbar bei Bedarf */}
         <div className="flex-grow overflow-y-auto overflow-x-auto">
           <Table>
             <TableHeader>
@@ -172,9 +191,9 @@ export default function SmellViolationTable({
                 <TableRow>
                   <TableCell
                     colSpan={7}
-                    className="text-center py-6 text-gray-500 dark:text-gray-300"
+                    className="text-center pt-60 text-gray-500 dark:text-gray-300"
                   >
-                    Keine Model-Smells gefunden.
+                    {translations[language].noModelSmellsFound}
                   </TableCell>
                 </TableRow>
               )}
@@ -182,7 +201,6 @@ export default function SmellViolationTable({
           </Table>
         </div>
 
-        {/* Pagination */}
         {totalPages > 1 && (
           <div className="flex justify-center items-center mt-4 gap-2">
             <button

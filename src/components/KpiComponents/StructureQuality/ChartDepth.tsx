@@ -63,6 +63,8 @@ export default function ChartDepth({
 
   const hasPagination = allDepthData.length > PAGE_SIZE;
 
+  const hasData = allDepthData.length > 0;
+
   useEffect(() => {
     if (!svgRef.current || !chartZoom) return;
 
@@ -70,7 +72,7 @@ export default function ChartDepth({
 
     const zoom = d3
       .zoom<SVGSVGElement, unknown>()
-      .scaleExtent([0.5, 3]) // Zoom-Level zwischen 0.5x und 3x
+      .scaleExtent([0.5, 3])
       .on("zoom", (event) => {
         setTransform(event.transform);
       });
@@ -78,7 +80,7 @@ export default function ChartDepth({
     svg.call(zoom as any);
 
     return () => {
-      svg.on(".zoom", null); // Cleanup bei Unmount
+      svg.on(".zoom", null);
     };
   }, [chartZoom]);
 
@@ -89,7 +91,7 @@ export default function ChartDepth({
 
   if (!visible) {
     return (
-      <div className="p-8 text-center dark:bg-gray-800 bg-white rounded-2xl shadow-sm">
+      <div className="p-8 text-center dark:bg-gray-800 bg-white rounded-2xl  h-[575px] items-center flex justify-center flex-col shadow-sm">
         <p className="text-gray-600 dark:text-gray-200 mb-4">
           {translations[language].loadChart}
         </p>
@@ -101,6 +103,17 @@ export default function ChartDepth({
           {translations[language].loadNow}{" "}
         </button>
       </div>
+    );
+  }
+
+  if (!hasData) {
+    return (
+      <section className="bg-white dark:bg-gray-800 h-[575px]  items-center flex justify-center flex-col rounded-2xl shadow-sm p-6 text-center text-gray-500 dark:text-gray-400">
+        <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100 flex items-center gap-2">
+          {translations[language].modelDepth}
+        </h2>
+        {translations[language].noData}
+      </section>
     );
   }
 
@@ -122,8 +135,6 @@ export default function ChartDepth({
       </div>
 
       <div className="relative rounded-2xl dark:bg-gray-800 bg-gray-50 p-4">
-        {/* ⬜️ Kariertes Muster als Hintergrund */}
-        {/* 🎨 Dynamischer Hintergrund */}
         <div
           className="absolute inset-0 rounded-2xl pointer-events-none transition-colors duration-300"
           style={{
@@ -168,8 +179,6 @@ export default function ChartDepth({
                     data={depthData}
                     margin={{ top: 10, right: 20, left: -40, bottom: 0 }}
                   >
-                    {/* === Farbige Tiefenbereiche === */}
-                    {/* Schwellenlinien (gestrichelt) */}
                     <ReferenceLine
                       y={3}
                       stroke="#facc15" // Gelb
@@ -194,8 +203,6 @@ export default function ChartDepth({
                       }}
                     />
 
-                    {/* stärkeres Rot */}
-                    {/* === Sanfter Farbverlauf === */}
                     <defs>
                       <linearGradient
                         id="lineColor"
@@ -224,7 +231,6 @@ export default function ChartDepth({
                         />
                       </linearGradient>
                     </defs>
-                    {/* Achsen: Linien ausblenden */}
                     <XAxis
                       dataKey="name"
                       interval={0}
@@ -241,8 +247,7 @@ export default function ChartDepth({
                       axisLine={false}
                       tickLine={false}
                     />
-                    {/* feine horizontale Linien */}
-                    {/* Tooltip */}
+
                     <Tooltip
                       content={({ payload }) => {
                         if (!payload?.length) return null;
@@ -278,7 +283,6 @@ export default function ChartDepth({
                         filter: "drop-shadow(0 2px 4px rgba(236,72,153,0.4))",
                       }}
                     />
-                    {/* Transparente Füllung unter der Linie */}
                     <Area
                       type="monotone"
                       dataKey="depth"
